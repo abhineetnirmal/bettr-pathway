@@ -21,6 +21,14 @@ const CalendarEventList: React.FC<CalendarEventListProps> = ({ events, onDelete 
     return 0;
   });
 
+  if (sortedEvents.length === 0) {
+    return (
+      <div className="text-center py-4 text-gray-500">
+        No events for this day. Click "Add Event" to create one.
+      </div>
+    );
+  }
+
   return (
     <ul className="space-y-2">
       {sortedEvents.map(event => (

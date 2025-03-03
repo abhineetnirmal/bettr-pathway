@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { CalendarEvent } from '@/pages/Calendar';
 import { X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface CalendarEventFormProps {
   onSubmit: (event: CalendarEvent) => void;
@@ -24,12 +25,26 @@ const CalendarEventForm: React.FC<CalendarEventFormProps> = ({
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [color, setColor] = useState('#3b82f6'); // Default blue
+  const { toast } = useToast();
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim()) {
-      alert('Please enter a title for the event');
+      toast({
+        title: "Error",
+        description: "Please enter a title for the event",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (endTime && startTime && endTime < startTime) {
+      toast({
+        title: "Error",
+        description: "End time cannot be earlier than start time",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -45,6 +60,11 @@ const CalendarEventForm: React.FC<CalendarEventFormProps> = ({
     
     onSubmit(newEvent);
   };
+  
+  // Format date for the date input
+  const formattedDate = selectedDate ? 
+    `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}` : 
+    '';
   
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -80,7 +100,7 @@ const CalendarEventForm: React.FC<CalendarEventFormProps> = ({
               <Input
                 id="date"
                 type="date"
-                value={selectedDate ? selectedDate.toISOString().split('T')[0] : ''}
+                value={formattedDate}
                 disabled
               />
             </div>

@@ -1,13 +1,12 @@
 
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar } from "@/components/ui/calendar";
 import MainLayout from '@/layouts/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HabitsContext } from './Index';
-import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
-import { Plus, CalendarPlus, Download, RefreshCw } from 'lucide-react';
+import { CalendarPlus } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import CalendarEventForm from '@/components/CalendarEventForm';
@@ -31,12 +30,32 @@ const CalendarPage = () => {
   const [showEventForm, setShowEventForm] = useState(false);
   const [activeTab, setActiveTab] = useState('schedule');
   const { toast } = useToast();
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   
-  // Load events from localStorage
-  const storedEvents = localStorage.getItem('calendarEvents');
-  const [events, setEvents] = useState<CalendarEvent[]>(
-    storedEvents ? JSON.parse(storedEvents) : []
-  );
+  // Load events from localStorage when component mounts
+  useEffect(() => {
+    const storedEvents = localStorage.getItem('calendarEvents');
+    if (storedEvents) {
+      try {
+        // Parse stored events and convert date strings back to Date objects
+        const parsedEvents = JSON.parse(storedEvents);
+        const eventsWithDateObjects = parsedEvents.map((event: any) => ({
+          ...event,
+          date: new Date(event.date)
+        }));
+        setEvents(eventsWithDateObjects);
+      } catch (error) {
+        console.error('Error parsing stored events:', error);
+        // If there's an error parsing, start with empty events
+        setEvents([]);
+      }
+    }
+  }, []);
+  
+  // Save events to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('calendarEvents', JSON.stringify(events));
+  }, [events]);
   
   // Get day of week for the selected date (0 = Sunday, 6 = Saturday)
   const selectedDayOfWeek = date ? date.getDay() : new Date().getDay();
@@ -48,14 +67,14 @@ const CalendarPage = () => {
   
   // Filter events for selected day
   const eventsForSelectedDay = events.filter(event => 
-    date && event.date && new Date(event.date).toDateString() === date.toDateString()
+    date && event.date && 
+    new Date(event.date).toDateString() === date.toDateString()
   );
   
   // Add new event
   const handleAddEvent = (event: CalendarEvent) => {
     const newEvents = [...events, event];
     setEvents(newEvents);
-    localStorage.setItem('calendarEvents', JSON.stringify(newEvents));
     setShowEventForm(false);
     toast({
       title: "Event Added",
@@ -67,7 +86,6 @@ const CalendarPage = () => {
   const handleDeleteEvent = (eventId: string) => {
     const newEvents = events.filter(event => event.id !== eventId);
     setEvents(newEvents);
-    localStorage.setItem('calendarEvents', JSON.stringify(newEvents));
     toast({
       title: "Event Deleted",
       description: "The event has been removed from your calendar."
@@ -75,13 +93,23 @@ const CalendarPage = () => {
   };
   
   // Import events from URL
-  const handleImportEvents = (url: string, events: CalendarEvent[]) => {
-    const newEvents = [...events];
+  const handleImportEvents = (url: string, importedEvents: CalendarEvent[]) => {
+    // Convert dates in imported events to Date objects
+    const eventsWithDateObjects = importedEvents.map(event => ({
+      ...event,
+      date: new Date(event.date)
+    }));
+    
+    // Merge with existing events, avoiding duplicates by ID
+    const existingIds = new Set(events.map(event => event.id));
+    const uniqueNewEvents = eventsWithDateObjects.filter(event => !existingIds.has(event.id));
+    
+    const newEvents = [...events, ...uniqueNewEvents];
     setEvents(newEvents);
-    localStorage.setItem('calendarEvents', JSON.stringify(newEvents));
+    
     toast({
       title: "Calendar Synced",
-      description: `Successfully imported ${events.length} events from feed.`
+      description: `Successfully imported ${uniqueNewEvents.length} events from feed.`
     });
   };
   
@@ -148,15 +176,13 @@ const CalendarPage = () => {
                       </p>
                       
                       {/* Events section */}
-                      {eventsForSelectedDay.length > 0 && (
-                        <div className="space-y-3">
-                          <p className="text-sm text-gray-500 font-medium">Events:</p>
-                          <CalendarEventList 
-                            events={eventsForSelectedDay} 
-                            onDelete={handleDeleteEvent}
-                          />
-                        </div>
-                      )}
+                      <div className="space-y-3">
+                        <p className="text-sm text-gray-500 font-medium">Events:</p>
+                        <CalendarEventList 
+                          events={eventsForSelectedDay} 
+                          onDelete={handleDeleteEvent}
+                        />
+                      </div>
                       
                       {/* Habits section */}
                       {habitsForSelectedDay.length > 0 ? (
