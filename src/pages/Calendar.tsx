@@ -6,10 +6,37 @@ import MainLayout from '@/layouts/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HabitsContext } from './Index';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import { Plus, CalendarPlus, Download, RefreshCw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
+import CalendarEventForm from '@/components/CalendarEventForm';
+import CalendarFeedSync from '@/components/CalendarFeedSync';
+import CalendarEventList from '@/components/CalendarEventList';
+
+// Define event type
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  date: Date;
+  startTime?: string;
+  endTime?: string;
+  description?: string;
+  color: string;
+}
 
 const CalendarPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const { habits } = useContext(HabitsContext);
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [activeTab, setActiveTab] = useState('schedule');
+  const { toast } = useToast();
+  
+  // Load events from localStorage
+  const storedEvents = localStorage.getItem('calendarEvents');
+  const [events, setEvents] = useState<CalendarEvent[]>(
+    storedEvents ? JSON.parse(storedEvents) : []
+  );
   
   // Get day of week for the selected date (0 = Sunday, 6 = Saturday)
   const selectedDayOfWeek = date ? date.getDay() : new Date().getDay();
@@ -18,6 +45,45 @@ const CalendarPage = () => {
   const habitsForSelectedDay = habits.filter(habit => 
     habit.frequency.includes(selectedDayOfWeek)
   );
+  
+  // Filter events for selected day
+  const eventsForSelectedDay = events.filter(event => 
+    date && event.date && new Date(event.date).toDateString() === date.toDateString()
+  );
+  
+  // Add new event
+  const handleAddEvent = (event: CalendarEvent) => {
+    const newEvents = [...events, event];
+    setEvents(newEvents);
+    localStorage.setItem('calendarEvents', JSON.stringify(newEvents));
+    setShowEventForm(false);
+    toast({
+      title: "Event Added",
+      description: `"${event.title}" has been added to your calendar.`
+    });
+  };
+  
+  // Delete an event
+  const handleDeleteEvent = (eventId: string) => {
+    const newEvents = events.filter(event => event.id !== eventId);
+    setEvents(newEvents);
+    localStorage.setItem('calendarEvents', JSON.stringify(newEvents));
+    toast({
+      title: "Event Deleted",
+      description: "The event has been removed from your calendar."
+    });
+  };
+  
+  // Import events from URL
+  const handleImportEvents = (url: string, events: CalendarEvent[]) => {
+    const newEvents = [...events];
+    setEvents(newEvents);
+    localStorage.setItem('calendarEvents', JSON.stringify(newEvents));
+    toast({
+      title: "Calendar Synced",
+      description: `Successfully imported ${events.length} events from feed.`
+    });
+  };
   
   return (
     <MainLayout>
@@ -28,66 +94,117 @@ const CalendarPage = () => {
         transition={{ duration: 0.3 }}
         className="container mx-auto"
       >
-        <h1 className="text-3xl font-bold mb-6">Your Calendar</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Your Calendar</h1>
+          <div className="flex space-x-2">
+            <Button 
+              variant="default" 
+              onClick={() => setShowEventForm(true)}
+              className="flex items-center"
+            >
+              <CalendarPlus className="mr-2 h-4 w-4" />
+              Add Event
+            </Button>
+          </div>
+        </div>
         
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Habit Schedule</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex justify-center">
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  className="rounded-md border"
-                />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {date ? (
-                <div className="space-y-4">
-                  <p className="text-lg font-medium">
-                    {date.toLocaleDateString('en-US', { 
-                      weekday: 'long',
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </p>
-                  
-                  {habitsForSelectedDay.length > 0 ? (
-                    <div className="space-y-3">
-                      <p className="text-sm text-gray-500 font-medium">Scheduled habits:</p>
-                      <ul className="space-y-2">
-                        {habitsForSelectedDay.map(habit => (
-                          <li key={habit.id} className="flex items-center p-2 bg-gray-50 rounded-lg">
-                            <div className={`w-3 h-3 rounded-full mr-3 bg-${habit.category === 'fitness' ? 'pink' : habit.category === 'mindfulness' ? 'purple' : habit.category === 'learning' ? 'blue' : 'green'}-500`}></div>
-                            <span>{habit.title}</span>
-                          </li>
-                        ))}
-                      </ul>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <TabsList>
+            <TabsTrigger value="schedule">Schedule</TabsTrigger>
+            <TabsTrigger value="sync">Sync Calendars</TabsTrigger>
+          </TabsList>
+          <TabsContent value="schedule">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Habit Schedule</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex justify-center">
+                    <Calendar
+                      mode="single"
+                      selected={date}
+                      onSelect={setDate}
+                      className="rounded-md border"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Daily Overview</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {date ? (
+                    <div className="space-y-4">
+                      <p className="text-lg font-medium">
+                        {date.toLocaleDateString('en-US', { 
+                          weekday: 'long',
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}
+                      </p>
+                      
+                      {/* Events section */}
+                      {eventsForSelectedDay.length > 0 && (
+                        <div className="space-y-3">
+                          <p className="text-sm text-gray-500 font-medium">Events:</p>
+                          <CalendarEventList 
+                            events={eventsForSelectedDay} 
+                            onDelete={handleDeleteEvent}
+                          />
+                        </div>
+                      )}
+                      
+                      {/* Habits section */}
+                      {habitsForSelectedDay.length > 0 ? (
+                        <div className="space-y-3">
+                          <p className="text-sm text-gray-500 font-medium">Scheduled habits:</p>
+                          <ul className="space-y-2">
+                            {habitsForSelectedDay.map(habit => (
+                              <li key={habit.id} className="flex items-center p-2 bg-gray-50 rounded-lg">
+                                <div className={`w-3 h-3 rounded-full mr-3 bg-${habit.category === 'fitness' ? 'pink' : habit.category === 'mindfulness' ? 'purple' : habit.category === 'learning' ? 'blue' : 'green'}-500`}></div>
+                                <span>{habit.title}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-500">No habits scheduled for this day yet.</p>
+                          <p className="text-sm text-gray-500">Add habits from the home screen to see them here.</p>
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <p className="text-sm text-gray-500">No habits scheduled for this day yet.</p>
-                      <p className="text-sm text-gray-500">Add habits from the home screen to see them here.</p>
-                    </div>
+                    <p className="text-gray-500">Select a date to view your habits</p>
                   )}
-                </div>
-              ) : (
-                <p className="text-gray-500">Select a date to view your habits</p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="sync">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sync External Calendars</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CalendarFeedSync onImport={handleImportEvents} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+        
+        {showEventForm && (
+          <CalendarEventForm 
+            onSubmit={handleAddEvent} 
+            onCancel={() => setShowEventForm(false)}
+            selectedDate={date}
+          />
+        )}
       </motion.div>
     </MainLayout>
   );
