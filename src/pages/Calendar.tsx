@@ -22,6 +22,7 @@ export interface CalendarEvent {
   endTime?: string;
   description?: string;
   color: string;
+  isHabit?: boolean;
 }
 
 const CalendarPage = () => {
@@ -57,6 +58,69 @@ const CalendarPage = () => {
     localStorage.setItem('calendarEvents', JSON.stringify(events));
   }, [events]);
   
+  // Transform habits into calendar events based on their frequency
+  const getHabitEventsForCalendar = () => {
+    const habitEvents: CalendarEvent[] = [];
+    
+    habits.forEach(habit => {
+      // Get the current date and the date 28 days from now (4 weeks)
+      const currentDate = new Date();
+      const maxDate = new Date();
+      maxDate.setDate(currentDate.getDate() + 28);
+      
+      // Start from yesterday to ensure we include any habits for today
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 1);
+      
+      // Create a habit event for each occurrence in the next 4 weeks
+      let loopDate = new Date(startDate);
+      
+      while (loopDate <= maxDate) {
+        const dayOfWeek = loopDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        
+        // If this habit is scheduled for this day of the week
+        if (habit.frequency.includes(dayOfWeek)) {
+          // Create a calendar event for this habit
+          const habitEvent: CalendarEvent = {
+            id: `habit-${habit.id}-${loopDate.toISOString().split('T')[0]}`,
+            title: habit.title,
+            date: new Date(loopDate),
+            description: `Regular habit: ${habit.title}`,
+            color: getHabitColor(habit.category),
+            isHabit: true
+          };
+          
+          habitEvents.push(habitEvent);
+        }
+        
+        // Move to the next day
+        loopDate.setDate(loopDate.getDate() + 1);
+      }
+    });
+    
+    return habitEvents;
+  };
+  
+  // Helper function to get color based on habit category
+  const getHabitColor = (category: string): string => {
+    switch (category) {
+      case 'learning':
+        return '#3b82f6'; // blue
+      case 'mindfulness':
+        return '#8b5cf6'; // purple
+      case 'fitness':
+        return '#ec4899'; // pink
+      case 'health':
+        return '#10b981'; // green
+      case 'creativity':
+        return '#f97316'; // orange
+      case 'productivity':
+        return '#6366f1'; // indigo
+      default:
+        return '#6b7280'; // gray
+    }
+  };
+  
   // Get day of week for the selected date (0 = Sunday, 6 = Saturday)
   const selectedDayOfWeek = date ? date.getDay() : new Date().getDay();
   
@@ -65,8 +129,11 @@ const CalendarPage = () => {
     habit.frequency.includes(selectedDayOfWeek)
   );
   
-  // Filter events for selected day
-  const eventsForSelectedDay = events.filter(event => 
+  // Combine regular events with habit events for the selected day
+  const allHabitEvents = getHabitEventsForCalendar();
+  
+  // Filter all events (including habits) for selected day
+  const eventsForSelectedDay = [...events, ...allHabitEvents].filter(event => 
     date && event.date && 
     new Date(event.date).toDateString() === date.toDateString()
   );
@@ -84,6 +151,15 @@ const CalendarPage = () => {
   
   // Delete an event
   const handleDeleteEvent = (eventId: string) => {
+    // Only delete regular events, not habit events
+    if (eventId.startsWith('habit-')) {
+      toast({
+        title: "Cannot Delete Habit",
+        description: "This is a recurring habit. Edit it from the habits screen."
+      });
+      return;
+    }
+    
     const newEvents = events.filter(event => event.id !== eventId);
     setEvents(newEvents);
     toast({
@@ -177,32 +253,12 @@ const CalendarPage = () => {
                       
                       {/* Events section */}
                       <div className="space-y-3">
-                        <p className="text-sm text-gray-500 font-medium">Events:</p>
+                        <p className="text-sm text-gray-500 font-medium">Events and Habits:</p>
                         <CalendarEventList 
                           events={eventsForSelectedDay} 
                           onDelete={handleDeleteEvent}
                         />
                       </div>
-                      
-                      {/* Habits section */}
-                      {habitsForSelectedDay.length > 0 ? (
-                        <div className="space-y-3">
-                          <p className="text-sm text-gray-500 font-medium">Scheduled habits:</p>
-                          <ul className="space-y-2">
-                            {habitsForSelectedDay.map(habit => (
-                              <li key={habit.id} className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                <div className={`w-3 h-3 rounded-full mr-3 bg-${habit.category === 'fitness' ? 'pink' : habit.category === 'mindfulness' ? 'purple' : habit.category === 'learning' ? 'blue' : 'green'}-500`}></div>
-                                <span>{habit.title}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <p className="text-sm text-gray-500">No habits scheduled for this day yet.</p>
-                          <p className="text-sm text-gray-500">Add habits from the home screen to see them here.</p>
-                        </div>
-                      )}
                     </div>
                   ) : (
                     <p className="text-gray-500">Select a date to view your habits</p>
