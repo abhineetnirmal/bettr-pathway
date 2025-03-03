@@ -24,44 +24,80 @@ interface Habit {
   frequency: number[];
 }
 
+// Create a context to share habits data across components
+export const HabitsContext = React.createContext<{
+  habits: Habit[];
+  setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
+}>({ 
+  habits: [], 
+  setHabits: () => {} 
+});
+
 const Index = () => {
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [showHabitForm, setShowHabitForm] = useState(false);
-  const [habits, setHabits] = useState<Habit[]>([
-    {
-      id: '1',
-      title: 'Morning Meditation',
-      category: 'mindfulness',
-      streak: 5,
-      completedToday: true,
-      totalCompletions: 32,
-      goalPerWeek: 5,
-      completionsThisWeek: 3,
-      frequency: [1, 2, 3, 4, 5]
-    },
-    {
-      id: '2',
-      title: 'Read 20 Pages',
-      category: 'learning',
-      streak: 12,
-      completedToday: false,
-      totalCompletions: 45,
-      goalPerWeek: 7,
-      completionsThisWeek: 5,
-      frequency: [0, 1, 2, 3, 4, 5, 6]
-    },
-    {
-      id: '3',
-      title: '10,000 Steps',
-      category: 'fitness',
-      streak: 3,
-      completedToday: false,
-      totalCompletions: 21,
-      goalPerWeek: 5,
-      completionsThisWeek: 2,
-      frequency: [1, 3, 5]
+  const [habits, setHabits] = useState<Habit[]>([]);
+  
+  // Load saved data on initial render
+  useEffect(() => {
+    // Load onboarding status
+    const onboardingCompleted = localStorage.getItem('onboardingCompleted');
+    if (onboardingCompleted === 'true') {
+      setShowOnboarding(false);
     }
-  ]);
+    
+    // Load saved habits from localStorage
+    const savedHabits = localStorage.getItem('habits');
+    if (savedHabits) {
+      setHabits(JSON.parse(savedHabits));
+    } else {
+      // Set initial demo habits if no saved habits exist
+      const initialHabits = [
+        {
+          id: '1',
+          title: 'Morning Meditation',
+          category: 'mindfulness' as HabitCategory,
+          streak: 5,
+          completedToday: true,
+          totalCompletions: 32,
+          goalPerWeek: 5,
+          completionsThisWeek: 3,
+          frequency: [1, 2, 3, 4, 5]
+        },
+        {
+          id: '2',
+          title: 'Read 20 Pages',
+          category: 'learning' as HabitCategory,
+          streak: 12,
+          completedToday: false,
+          totalCompletions: 45,
+          goalPerWeek: 7,
+          completionsThisWeek: 5,
+          frequency: [0, 1, 2, 3, 4, 5, 6]
+        },
+        {
+          id: '3',
+          title: '10,000 Steps',
+          category: 'fitness' as HabitCategory,
+          streak: 3,
+          completedToday: false,
+          totalCompletions: 21,
+          goalPerWeek: 5,
+          completionsThisWeek: 2,
+          frequency: [1, 3, 5]
+        }
+      ];
+      setHabits(initialHabits);
+      localStorage.setItem('habits', JSON.stringify(initialHabits));
+    }
+  }, []);
+  
+  // Save habits whenever they change
+  useEffect(() => {
+    if (habits.length > 0) {
+      localStorage.setItem('habits', JSON.stringify(habits));
+    }
+  }, [habits]);
   
   const [progressData, setProgressData] = useState([
     { day: 'Mon', completed: 2 },
@@ -75,6 +111,7 @@ const Index = () => {
   
   const completeOnboarding = () => {
     setShowOnboarding(false);
+    localStorage.setItem('onboardingCompleted', 'true');
   };
   
   const toggleHabitCompletion = (id: string) => {
@@ -115,88 +152,90 @@ const Index = () => {
   };
 
   return (
-    <MainLayout>
-      <AnimatePresence>
-        {showOnboarding && <OnboardingScreen onComplete={completeOnboarding} />}
-      </AnimatePresence>
-      
-      <div className="max-w-3xl mx-auto">
-        {/* Header section */}
-        <motion.div 
-          className="mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-3xl font-bold mb-2">Your Habits</h1>
-          <p className="text-bettr-text-secondary">Track your progress and build consistency</p>
-        </motion.div>
+    <HabitsContext.Provider value={{ habits, setHabits }}>
+      <MainLayout>
+        <AnimatePresence>
+          {showOnboarding && <OnboardingScreen onComplete={completeOnboarding} />}
+        </AnimatePresence>
         
-        {/* Today's habits */}
-        <motion.div 
-          className="mb-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Today</h2>
-            <motion.button
-              className="btn-primary flex items-center space-x-1"
-              onClick={() => setShowHabitForm(true)}
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <Plus size={16} />
-              <span>New Habit</span>
-            </motion.button>
-          </div>
+        <div className="max-w-3xl mx-auto">
+          {/* Header section */}
+          <motion.div 
+            className="mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <h1 className="text-3xl font-bold mb-2">Your Habits</h1>
+            <p className="text-bettr-text-secondary">Track your progress and build consistency</p>
+          </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-fade-in">
-            {habits.map((habit) => (
-              <HabitCard 
-                key={habit.id}
-                {...habit}
-                onToggle={toggleHabitCompletion}
-              />
-            ))}
+          {/* Today's habits */}
+          <motion.div 
+            className="mb-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">Today</h2>
+              <motion.button
+                className="btn-primary flex items-center space-x-1"
+                onClick={() => setShowHabitForm(true)}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <Plus size={16} />
+                <span>New Habit</span>
+              </motion.button>
+            </div>
             
-            {habits.length === 0 && (
-              <div className="col-span-full glass-card p-6 text-center">
-                <Sparkles className="mx-auto mb-3 text-bettr-orange" size={24} />
-                <h3 className="text-lg font-medium mb-2">No habits yet</h3>
-                <p className="text-bettr-text-secondary mb-4">Start building your routine by adding your first habit</p>
-                <button 
-                  className="btn-primary mx-auto"
-                  onClick={() => setShowHabitForm(true)}
-                >
-                  Create Habit
-                </button>
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 stagger-fade-in">
+              {habits.map((habit) => (
+                <HabitCard 
+                  key={habit.id}
+                  {...habit}
+                  onToggle={toggleHabitCompletion}
+                />
+              ))}
+              
+              {habits.length === 0 && (
+                <div className="col-span-full glass-card p-6 text-center">
+                  <Sparkles className="mx-auto mb-3 text-bettr-orange" size={24} />
+                  <h3 className="text-lg font-medium mb-2">No habits yet</h3>
+                  <p className="text-bettr-text-secondary mb-4">Start building your routine by adding your first habit</p>
+                  <button 
+                    className="btn-primary mx-auto"
+                    onClick={() => setShowHabitForm(true)}
+                  >
+                    Create Habit
+                  </button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+          
+          {/* Progress & Motivation Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <ProgressChart data={progressData} />
+            <MotivationalQuote />
           </div>
-        </motion.div>
-        
-        {/* Progress & Motivation Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <ProgressChart data={progressData} />
-          <MotivationalQuote />
         </div>
-      </div>
-      
-      {/* AI Coach */}
-      <AICoach />
-      
-      {/* Habit Form Modal */}
-      <AnimatePresence>
-        {showHabitForm && (
-          <HabitForm 
-            onClose={() => setShowHabitForm(false)}
-            onSave={saveNewHabit}
-          />
-        )}
-      </AnimatePresence>
-    </MainLayout>
+        
+        {/* AI Coach */}
+        <AICoach />
+        
+        {/* Habit Form Modal */}
+        <AnimatePresence>
+          {showHabitForm && (
+            <HabitForm 
+              onClose={() => setShowHabitForm(false)}
+              onSave={saveNewHabit}
+            />
+          )}
+        </AnimatePresence>
+      </MainLayout>
+    </HabitsContext.Provider>
   );
 };
 

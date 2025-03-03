@@ -1,13 +1,23 @@
 
-import React from 'react';
+import React, { useContext, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar } from "@/components/ui/calendar";
 import MainLayout from '@/layouts/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useState } from 'react';
+import { HabitsContext } from './Index';
+import { format } from 'date-fns';
 
 const CalendarPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const { habits } = useContext(HabitsContext);
+  
+  // Get day of week for the selected date (0 = Sunday, 6 = Saturday)
+  const selectedDayOfWeek = date ? date.getDay() : new Date().getDay();
+  
+  // Filter habits scheduled for the selected day
+  const habitsForSelectedDay = habits.filter(habit => 
+    habit.frequency.includes(selectedDayOfWeek)
+  );
   
   return (
     <MainLayout>
@@ -52,10 +62,25 @@ const CalendarPage = () => {
                       day: 'numeric' 
                     })}
                   </p>
-                  <div className="space-y-2">
-                    <p className="text-sm text-gray-500">No habits scheduled for this day yet.</p>
-                    <p className="text-sm text-gray-500">Click on a habit to schedule it.</p>
-                  </div>
+                  
+                  {habitsForSelectedDay.length > 0 ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-500 font-medium">Scheduled habits:</p>
+                      <ul className="space-y-2">
+                        {habitsForSelectedDay.map(habit => (
+                          <li key={habit.id} className="flex items-center p-2 bg-gray-50 rounded-lg">
+                            <div className={`w-3 h-3 rounded-full mr-3 bg-${habit.category === 'fitness' ? 'pink' : habit.category === 'mindfulness' ? 'purple' : habit.category === 'learning' ? 'blue' : 'green'}-500`}></div>
+                            <span>{habit.title}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-sm text-gray-500">No habits scheduled for this day yet.</p>
+                      <p className="text-sm text-gray-500">Add habits from the home screen to see them here.</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="text-gray-500">Select a date to view your habits</p>
