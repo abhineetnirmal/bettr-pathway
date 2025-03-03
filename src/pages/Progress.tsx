@@ -10,6 +10,17 @@ const ProgressPage = () => {
   // Mock data - in a real app, this would come from a database
   const mockStreak = 7;
   
+  // Sample data for the progress chart
+  const progressData = [
+    { day: 'Mon', completed: 3 },
+    { day: 'Tue', completed: 2 },
+    { day: 'Wed', completed: 5 },
+    { day: 'Thu', completed: 4 },
+    { day: 'Fri', completed: 3 },
+    { day: 'Sat', completed: 2 },
+    { day: 'Sun', completed: 4 },
+  ];
+  
   return (
     <MainLayout>
       <motion.div
@@ -32,7 +43,7 @@ const ProgressPage = () => {
                 You're making great progress! Keep up the good work.
               </p>
               <div className="h-[300px]">
-                <ProgressChart />
+                <ProgressChart data={progressData} />
               </div>
             </CardContent>
           </Card>
