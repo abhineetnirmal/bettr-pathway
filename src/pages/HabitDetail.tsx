@@ -1,7 +1,7 @@
 
 import React, { useContext, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format, parse, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { ChevronLeft, Calendar, CheckCircle, Edit, X, Flame, BarChart3 } from 'lucide-react';
 import { HabitsContext } from './Index';
@@ -9,6 +9,9 @@ import MainLayout from '@/layouts/MainLayout';
 import StreakCounter from '@/components/StreakCounter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import HabitForm from '@/components/HabitForm';
+
+// Import all the icons used
+import { Book, Brain, Dumbbell, Heart, Music, Coffee } from 'lucide-react';
 
 const HabitDetail = () => {
   const { habitId } = useParams();
@@ -240,8 +243,5 @@ const HabitDetail = () => {
     </MainLayout>
   );
 };
-
-// Import all the icons used above
-import { Book, Brain, Dumbbell, Heart, Music, Coffee } from 'lucide-react';
 
 export default HabitDetail;

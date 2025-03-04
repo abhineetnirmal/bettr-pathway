@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -53,7 +52,7 @@ const HabitCard: React.FC<HabitCardProps> = ({
 
   return (
     <motion.div 
-      className="habit-card relative"
+      className="habit-card relative bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
       whileHover={{ y: -4 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -97,9 +96,10 @@ const HabitCard: React.FC<HabitCardProps> = ({
       
       <Link 
         to={`/habit/${id}`} 
-        className="absolute inset-0 flex items-end justify-end p-3 opacity-0 hover:opacity-100 transition-opacity"
+        className="absolute inset-0 z-10 flex items-end justify-end p-3 opacity-0 hover:opacity-100 transition-opacity"
+        aria-label={`View details for ${title}`}
       >
-        <div className="flex items-center text-xs font-medium text-bettr-blue">
+        <div className="flex items-center text-xs font-medium text-bettr-blue bg-white dark:bg-gray-800 px-2 py-1 rounded-md shadow-sm">
           <span>View details</span>
           <ArrowRight size={12} className="ml-1" />
         </div>
