@@ -9,10 +9,11 @@ import AICoach from '@/components/AICoach';
 import MotivationalQuote from '@/components/MotivationalQuote';
 import HabitForm from '@/components/HabitForm';
 import OnboardingScreen from '@/components/OnboardingScreen';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
 
-type HabitCategory = 'learning' | 'mindfulness' | 'fitness' | 'health' | 'creativity' | 'productivity';
+export type HabitCategory = 'learning' | 'mindfulness' | 'fitness' | 'health' | 'creativity' | 'productivity';
 
-interface Habit {
+export interface Habit {
   id: string;
   title: string;
   category: HabitCategory;
@@ -22,21 +23,25 @@ interface Habit {
   goalPerWeek: number;
   completionsThisWeek: number;
   frequency: number[];
+  completionHistory: { date: string; completed: boolean }[];
 }
 
 // Create a context to share habits data across components
 export const HabitsContext = React.createContext<{
   habits: Habit[];
   setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
+  toggleHabitCompletion: (habitId: string, date?: Date) => void;
 }>({ 
   habits: [], 
-  setHabits: () => {} 
+  setHabits: () => {},
+  toggleHabitCompletion: () => {} 
 });
 
 const Index = () => {
   const [showOnboarding, setShowOnboarding] = useState(true);
   const [showHabitForm, setShowHabitForm] = useState(false);
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [progressData, setProgressData] = useState<{ day: string; completed: number }[]>([]);
   
   // Load saved data on initial render
   useEffect(() => {
@@ -49,9 +54,23 @@ const Index = () => {
     // Load saved habits from localStorage
     const savedHabits = localStorage.getItem('habits');
     if (savedHabits) {
-      setHabits(JSON.parse(savedHabits));
+      const parsedHabits = JSON.parse(savedHabits);
+      
+      // Make sure habits have completionHistory property
+      const habitsWithHistory = parsedHabits.map((habit: any) => ({
+        ...habit,
+        completionHistory: habit.completionHistory || []
+      }));
+      
+      setHabits(habitsWithHistory);
     } else {
       // Set initial demo habits if no saved habits exist
+      const today = new Date();
+      const todayStr = format(today, 'yyyy-MM-dd');
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
+      
       const initialHabits = [
         {
           id: '1',
@@ -62,7 +81,11 @@ const Index = () => {
           totalCompletions: 32,
           goalPerWeek: 5,
           completionsThisWeek: 3,
-          frequency: [1, 2, 3, 4, 5]
+          frequency: [1, 2, 3, 4, 5],
+          completionHistory: [
+            { date: yesterdayStr, completed: true },
+            { date: todayStr, completed: true }
+          ]
         },
         {
           id: '2',
@@ -73,7 +96,10 @@ const Index = () => {
           totalCompletions: 45,
           goalPerWeek: 7,
           completionsThisWeek: 5,
-          frequency: [0, 1, 2, 3, 4, 5, 6]
+          frequency: [0, 1, 2, 3, 4, 5, 6],
+          completionHistory: [
+            { date: yesterdayStr, completed: true }
+          ]
         },
         {
           id: '3',
@@ -84,13 +110,44 @@ const Index = () => {
           totalCompletions: 21,
           goalPerWeek: 5,
           completionsThisWeek: 2,
-          frequency: [1, 3, 5]
+          frequency: [1, 3, 5],
+          completionHistory: [
+            { date: yesterdayStr, completed: true }
+          ]
         }
       ];
       setHabits(initialHabits);
       localStorage.setItem('habits', JSON.stringify(initialHabits));
     }
   }, []);
+  
+  // Calculate progress data for the current week
+  useEffect(() => {
+    const today = new Date();
+    const firstDayOfWeek = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
+    const lastDayOfWeek = endOfWeek(today, { weekStartsOn: 1 });
+    
+    const daysOfWeek = eachDayOfInterval({ start: firstDayOfWeek, end: lastDayOfWeek });
+    
+    const weeklyProgress = daysOfWeek.map(day => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      const dayName = format(day, 'EEE');
+      
+      // Count completions for this day
+      let completedCount = 0;
+      
+      habits.forEach(habit => {
+        const completionForDay = habit.completionHistory.find(h => h.date === dayStr);
+        if (completionForDay && completionForDay.completed) {
+          completedCount++;
+        }
+      });
+      
+      return { day: dayName, completed: completedCount };
+    });
+    
+    setProgressData(weeklyProgress);
+  }, [habits]);
   
   // Save habits whenever they change
   useEffect(() => {
@@ -99,34 +156,77 @@ const Index = () => {
     }
   }, [habits]);
   
-  const [progressData, setProgressData] = useState([
-    { day: 'Mon', completed: 2 },
-    { day: 'Tue', completed: 3 },
-    { day: 'Wed', completed: 1 },
-    { day: 'Thu', completed: 3 },
-    { day: 'Fri', completed: 2 },
-    { day: 'Sat', completed: 0 },
-    { day: 'Sun', completed: 0 }
-  ]);
-  
   const completeOnboarding = () => {
     setShowOnboarding(false);
     localStorage.setItem('onboardingCompleted', 'true');
   };
   
-  const toggleHabitCompletion = (id: string) => {
-    setHabits(habits.map(habit => 
-      habit.id === id 
-        ? { 
-            ...habit, 
-            completedToday: !habit.completedToday,
-            completionsThisWeek: habit.completedToday 
-              ? habit.completionsThisWeek - 1 
-              : habit.completionsThisWeek + 1,
-            streak: habit.completedToday ? habit.streak - 1 : habit.streak + 1
-          } 
-        : habit
-    ));
+  const toggleHabitCompletion = (id: string, date?: Date) => {
+    const today = date || new Date();
+    const dateStr = format(today, 'yyyy-MM-dd');
+    
+    setHabits(prevHabits => {
+      return prevHabits.map(habit => {
+        if (habit.id !== id) return habit;
+        
+        // Find if there's already a record for this date
+        const existingIndex = habit.completionHistory.findIndex(h => h.date === dateStr);
+        let newCompletionHistory = [...habit.completionHistory];
+        
+        // Toggle completion for this date
+        if (existingIndex >= 0) {
+          const newCompleted = !habit.completionHistory[existingIndex].completed;
+          newCompletionHistory[existingIndex] = { 
+            date: dateStr, 
+            completed: newCompleted 
+          };
+        } else {
+          // No record for this date, create a new one (completed)
+          newCompletionHistory.push({ date: dateStr, completed: true });
+        }
+        
+        // Calculate streak
+        let currentStreak = 0;
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        // Sort history by date (newest first)
+        const sortedHistory = [...newCompletionHistory]
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        // Count consecutive completed days
+        for (const entry of sortedHistory) {
+          if (entry.completed) {
+            currentStreak++;
+          } else {
+            break;
+          }
+        }
+        
+        // Calculate completions this week
+        const startDay = startOfWeek(today, { weekStartsOn: 1 });
+        const endDay = endOfWeek(today, { weekStartsOn: 1 });
+        
+        const completionsThisWeek = newCompletionHistory.filter(h => {
+          const entryDate = new Date(h.date);
+          return h.completed && entryDate >= startDay && entryDate <= endDay;
+        }).length;
+        
+        // Update completedToday based on the current date
+        const isTodayCompleted = newCompletionHistory.some(
+          h => h.date === format(new Date(), 'yyyy-MM-dd') && h.completed
+        );
+        
+        return {
+          ...habit,
+          completedToday: isTodayCompleted,
+          completionHistory: newCompletionHistory,
+          streak: currentStreak,
+          completionsThisWeek,
+          totalCompletions: newCompletionHistory.filter(h => h.completed).length
+        };
+      });
+    });
   };
   
   const saveNewHabit = (habitData: {
@@ -144,7 +244,8 @@ const Index = () => {
       totalCompletions: 0,
       goalPerWeek: habitData.goalPerWeek,
       completionsThisWeek: 0,
-      frequency: habitData.frequency
+      frequency: habitData.frequency,
+      completionHistory: []
     };
     
     setHabits([...habits, newHabit]);
@@ -152,7 +253,7 @@ const Index = () => {
   };
 
   return (
-    <HabitsContext.Provider value={{ habits, setHabits }}>
+    <HabitsContext.Provider value={{ habits, setHabits, toggleHabitCompletion }}>
       <MainLayout>
         <AnimatePresence>
           {showOnboarding && <OnboardingScreen onComplete={completeOnboarding} />}

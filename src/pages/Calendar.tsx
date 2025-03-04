@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import CalendarEventForm from '@/components/CalendarEventForm';
 import CalendarFeedSync from '@/components/CalendarFeedSync';
 import CalendarEventList from '@/components/CalendarEventList';
+import { format, parseISO } from 'date-fns';
 
 // Define event type
 export interface CalendarEvent {
@@ -23,11 +24,12 @@ export interface CalendarEvent {
   description?: string;
   color: string;
   isHabit?: boolean;
+  completed?: boolean;
 }
 
 const CalendarPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const { habits } = useContext(HabitsContext);
+  const { habits, toggleHabitCompletion } = useContext(HabitsContext);
   const [showEventForm, setShowEventForm] = useState(false);
   const [activeTab, setActiveTab] = useState('schedule');
   const { toast } = useToast();
@@ -80,14 +82,21 @@ const CalendarPage = () => {
         
         // If this habit is scheduled for this day of the week
         if (habit.frequency.includes(dayOfWeek)) {
+          const dateStr = format(loopDate, 'yyyy-MM-dd');
+          
+          // Check if this habit is completed for this date
+          const completionEntry = habit.completionHistory.find(h => h.date === dateStr);
+          const isCompleted = completionEntry ? completionEntry.completed : false;
+          
           // Create a calendar event for this habit
           const habitEvent: CalendarEvent = {
-            id: `habit-${habit.id}-${loopDate.toISOString().split('T')[0]}`,
+            id: `habit-${habit.id}-${dateStr}`,
             title: habit.title,
             date: new Date(loopDate),
             description: `Regular habit: ${habit.title}`,
             color: getHabitColor(habit.category),
-            isHabit: true
+            isHabit: true,
+            completed: isCompleted
           };
           
           habitEvents.push(habitEvent);
@@ -165,6 +174,17 @@ const CalendarPage = () => {
     toast({
       title: "Event Deleted",
       description: "The event has been removed from your calendar."
+    });
+  };
+  
+  // Toggle habit completion
+  const handleToggleHabit = (habitId: string, eventDate: Date, completed: boolean) => {
+    // Call the context function to update the habit
+    toggleHabitCompletion(habitId, eventDate);
+    
+    toast({
+      title: completed ? "Habit Completed" : "Habit Marked Incomplete",
+      description: `Your habit has been marked as ${completed ? 'completed' : 'incomplete'} for this day.`
     });
   };
   
@@ -257,6 +277,7 @@ const CalendarPage = () => {
                         <CalendarEventList 
                           events={eventsForSelectedDay} 
                           onDelete={handleDeleteEvent}
+                          onToggleHabit={handleToggleHabit}
                         />
                       </div>
                     </div>

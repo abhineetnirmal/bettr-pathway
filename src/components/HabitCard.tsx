@@ -3,8 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import StreakCounter from './StreakCounter';
 import { CheckCircle, Calendar, BookOpenCheck, Brain, Dumbbell, Heart, Music, Coffee } from 'lucide-react';
-
-type HabitCategory = 'learning' | 'mindfulness' | 'fitness' | 'health' | 'creativity' | 'productivity';
+import { HabitCategory } from '@/pages/Index';
 
 interface HabitCardProps {
   id: string;

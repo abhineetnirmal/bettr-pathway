@@ -1,14 +1,16 @@
 
-import React, { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import MainLayout from '@/layouts/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProgressChart from '@/components/ProgressChart';
 import StreakCounter from '@/components/StreakCounter';
 import { HabitsContext } from './Index';
+import { format, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 
 const ProgressPage = () => {
   const { habits } = useContext(HabitsContext);
+  const [progressData, setProgressData] = useState<{ day: string; completed: number }[]>([]);
   
   // Calculate the longest streak from all habits
   const longestStreak = Math.max(...habits.map(habit => habit.streak), 0);
@@ -20,17 +22,38 @@ const ProgressPage = () => {
     ? Math.round((totalCompletionsThisWeek / totalGoalsThisWeek) * 100) 
     : 0;
   
-  // Sample data for the progress chart - in a real app, this would be calculated from habit completions
-  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const progressData = daysOfWeek.map(day => {
-    // This is mock data - in a real app, you would calculate actual completions per day
-    const randomCompletions = Math.floor(Math.random() * 5) + 1;
-    return { day, completed: randomCompletions };
-  });
+  // Calculate weekly progress data
+  useEffect(() => {
+    const today = new Date();
+    const firstDayOfWeek = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
+    const lastDayOfWeek = endOfWeek(today, { weekStartsOn: 1 });
+    
+    const daysOfWeek = eachDayOfInterval({ start: firstDayOfWeek, end: lastDayOfWeek });
+    
+    const weeklyProgress = daysOfWeek.map(day => {
+      const dayStr = format(day, 'yyyy-MM-dd');
+      const dayName = format(day, 'EEE');
+      
+      // Count completions for this day
+      let completedCount = 0;
+      
+      habits.forEach(habit => {
+        const completionForDay = habit.completionHistory.find(h => h.date === dayStr);
+        if (completionForDay && completionForDay.completed) {
+          completedCount++;
+        }
+      });
+      
+      return { day: dayName, completed: completedCount };
+    });
+    
+    setProgressData(weeklyProgress);
+  }, [habits]);
   
   // Find the best day (day with most completions)
   const bestDay = progressData.reduce((best, current) => 
-    current.completed > best.completed ? current : best, progressData[0]);
+    current.completed > best.completed ? current : best, 
+    progressData[0] || { day: 'None', completed: 0 });
   
   return (
     <MainLayout>
