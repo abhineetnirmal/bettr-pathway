@@ -1,9 +1,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import StreakCounter from './StreakCounter';
-import { CheckCircle, Calendar, BookOpenCheck, Brain, Dumbbell, Heart, Music, Coffee, ArrowRight } from 'lucide-react';
+import { CheckCircle, Calendar, BookOpenCheck, Brain, Dumbbell, Heart, Music, Coffee } from 'lucide-react';
 import { HabitCategory } from '@/pages/Index';
 
 interface HabitCardProps {
@@ -51,12 +50,9 @@ const HabitCard: React.FC<HabitCardProps> = ({
   
   const Icon = categoryIcons[category];
 
-  // Add console log to verify the habit ID
-  console.log(`HabitCard rendering for habit ID: ${id}`);
-
   return (
     <motion.div 
-      className="habit-card relative bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700"
+      className="habit-card"
       whileHover={{ y: -4 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -97,23 +93,6 @@ const HabitCard: React.FC<HabitCardProps> = ({
           />
         </div>
       </div>
-      
-      <Link 
-        to={`/habit/${id}`} 
-        className="absolute inset-0 z-10 flex items-end justify-end p-3 opacity-0 hover:opacity-100 transition-opacity"
-        aria-label={`View details for ${title}`}
-        onClick={(e) => {
-          // Prevent the link from being clicked if the user is clicking the toggle button
-          if ((e.target as HTMLElement).closest('button')) {
-            e.preventDefault();
-          }
-        }}
-      >
-        <div className="flex items-center text-xs font-medium text-bettr-blue bg-white dark:bg-gray-800 px-2 py-1 rounded-md shadow-sm">
-          <span>View details</span>
-          <ArrowRight size={12} className="ml-1" />
-        </div>
-      </Link>
     </motion.div>
   );
 };

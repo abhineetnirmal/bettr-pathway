@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ProgressChart from '@/components/ProgressChart';
 import StreakCounter from '@/components/StreakCounter';
 import { HabitsContext } from './Index';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isWithinInterval } from 'date-fns';
-import { toast } from "@/components/ui/use-toast";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
 
 const ProgressPage = () => {
   const { habits } = useContext(HabitsContext);
@@ -17,19 +16,7 @@ const ProgressPage = () => {
   const longestStreak = Math.max(...habits.map(habit => habit.streak), 0);
   
   // Calculate weekly completion rate
-  const today = new Date();
-  const firstDayOfWeek = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
-  const lastDayOfWeek = endOfWeek(today, { weekStartsOn: 1 });
-  
-  const totalCompletionsThisWeek = habits.reduce((sum, habit) => {
-    const completionsThisWeek = habit.completionHistory.filter(h => {
-      const entryDate = new Date(h.date);
-      return h.completed && 
-        isWithinInterval(entryDate, { start: firstDayOfWeek, end: lastDayOfWeek });
-    }).length;
-    return sum + completionsThisWeek;
-  }, 0);
-  
+  const totalCompletionsThisWeek = habits.reduce((sum, habit) => sum + habit.completionsThisWeek, 0);
   const totalGoalsThisWeek = habits.reduce((sum, habit) => sum + habit.goalPerWeek, 0);
   const completionRate = totalGoalsThisWeek > 0 
     ? Math.round((totalCompletionsThisWeek / totalGoalsThisWeek) * 100) 
@@ -37,6 +24,10 @@ const ProgressPage = () => {
   
   // Calculate weekly progress data
   useEffect(() => {
+    const today = new Date();
+    const firstDayOfWeek = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
+    const lastDayOfWeek = endOfWeek(today, { weekStartsOn: 1 });
+    
     const daysOfWeek = eachDayOfInterval({ start: firstDayOfWeek, end: lastDayOfWeek });
     
     const weeklyProgress = daysOfWeek.map(day => {
@@ -57,23 +48,13 @@ const ProgressPage = () => {
     });
     
     setProgressData(weeklyProgress);
-  }, [habits, firstDayOfWeek, lastDayOfWeek]);
+  }, [habits]);
   
   // Find the best day (day with most completions)
-  const bestDay = progressData.length > 0 ? 
-    progressData.reduce((best, current) => 
-      current.completed > best.completed ? current : best, 
-      progressData[0]
-    ) : { day: 'None', completed: 0 };
+  const bestDay = progressData.reduce((best, current) => 
+    current.completed > best.completed ? current : best, 
+    progressData[0] || { day: 'None', completed: 0 });
   
-  useEffect(() => {
-    // Show a toast when the component mounts
-    toast({
-      title: "Progress updated",
-      description: `Your habit completion rate this week is ${completionRate}%`,
-    });
-  }, [completionRate]);
-
   return (
     <MainLayout>
       <motion.div
@@ -125,7 +106,7 @@ const ProgressPage = () => {
                     <span className="font-medium">{habits.length}</span>
                   </li>
                   <li className="flex justify-between">
-                    <span>Completed this week:</span>
+                    <span>Completed:</span>
                     <span className="font-medium">{totalCompletionsThisWeek}/{totalGoalsThisWeek}</span>
                   </li>
                   <li className="flex justify-between">
