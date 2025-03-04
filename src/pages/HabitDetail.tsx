@@ -1,5 +1,4 @@
-
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, parse, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
@@ -19,14 +18,25 @@ const HabitDetail = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const navigate = useNavigate();
   
+  console.log("HabitDetail - Current habits:", habits);
+  console.log("HabitDetail - Looking for habitId:", habitId);
+  
   const habit = habits.find(h => h.id === habitId);
   
+  console.log("HabitDetail - Found habit:", habit);
+  
+  useEffect(() => {
+    if (habits.length > 0 && habitId && !habit) {
+      console.error(`Habit with ID ${habitId} not found in`, habits);
+    }
+  }, [habitId, habits, habit]);
+
   if (!habit) {
     return (
       <MainLayout>
         <div className="max-w-3xl mx-auto py-8 text-center">
           <h1 className="text-2xl font-bold mb-4">Habit not found</h1>
-          <p className="mb-6">The habit you're looking for doesn't exist.</p>
+          <p className="mb-6">The habit you're looking for (ID: {habitId}) doesn't exist.</p>
           <Link to="/" className="btn-primary">Go back to habits</Link>
         </div>
       </MainLayout>
@@ -51,7 +61,6 @@ const HabitDetail = () => {
     productivity: <Coffee className={`text-indigo-500`} size={20} />
   };
   
-  // Generate the monthly calendar
   const today = new Date();
   const monthStart = startOfMonth(today);
   const monthEnd = endOfMonth(today);
@@ -59,18 +68,15 @@ const HabitDetail = () => {
   
   const dayOfWeekNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // Check if a date has a completion
   const isDateCompleted = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return habit.completionHistory.some(h => h.date === dateStr && h.completed);
   };
   
-  // Get history stats
   const completedDaysThisMonth = days.filter(day => isDateCompleted(day)).length;
   const totalDaysThisMonth = days.length;
   const completionRateThisMonth = Math.round((completedDaysThisMonth / totalDaysThisMonth) * 100);
   
-  // Handle day click
   const handleDayClick = (date: Date) => {
     toggleHabitCompletion(habit.id, date);
   };
@@ -101,7 +107,6 @@ const HabitDetail = () => {
         </div>
         
         <div className="grid gap-6">
-          {/* Habit details card */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div className="flex items-center space-x-3">
@@ -135,7 +140,6 @@ const HabitDetail = () => {
             </CardContent>
           </Card>
           
-          {/* Calendar view */}
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -149,7 +153,6 @@ const HabitDetail = () => {
               </div>
             </CardHeader>
             <CardContent>
-              {/* Day of week headers */}
               <div className="grid grid-cols-7 mb-2">
                 {dayOfWeekNames.map(day => (
                   <div key={day} className="text-center text-sm font-medium text-gray-500">
@@ -158,14 +161,11 @@ const HabitDetail = () => {
                 ))}
               </div>
               
-              {/* Calendar grid */}
               <div className="grid grid-cols-7 gap-1">
-                {/* Empty cells for the first day of the month */}
                 {Array.from({ length: monthStart.getDay() }).map((_, index) => (
                   <div key={`empty-${index}`} className="h-10 rounded-md"></div>
                 ))}
                 
-                {/* Day cells */}
                 {days.map(day => {
                   const isCompleted = isDateCompleted(day);
                   const isToday = isSameDay(day, today);
@@ -195,7 +195,6 @@ const HabitDetail = () => {
             </CardContent>
           </Card>
           
-          {/* Completion history */}
           <Card>
             <CardHeader>
               <CardTitle>Completion History</CardTitle>
@@ -227,13 +226,11 @@ const HabitDetail = () => {
         </div>
       </motion.div>
       
-      {/* Edit Form Modal */}
       <AnimatePresence>
         {showEditForm && (
           <HabitForm 
             onClose={() => setShowEditForm(false)}
             onSave={(updatedHabit) => {
-              // This would need to be updated in the Index context
               setShowEditForm(false);
             }}
             initialHabit={habit}
