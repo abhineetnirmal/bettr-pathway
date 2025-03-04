@@ -1,9 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Check, BookOpenCheck, Brain, Dumbbell, Heart, Music, Coffee } from 'lucide-react';
-
-type HabitCategory = 'learning' | 'mindfulness' | 'fitness' | 'health' | 'creativity' | 'productivity';
+import { HabitCategory } from '@/pages/Index';
+import type { Habit } from '@/pages/Index';
 
 interface HabitFormProps {
   onClose: () => void;
@@ -13,13 +13,14 @@ interface HabitFormProps {
     frequency: number[];
     goalPerWeek: number;
   }) => void;
+  initialHabit?: Habit;
 }
 
-const HabitForm: React.FC<HabitFormProps> = ({ onClose, onSave }) => {
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<HabitCategory>('productivity');
-  const [frequency, setFrequency] = useState<number[]>([1, 3, 5]); // Days of week (0 = Sunday, 6 = Saturday)
-  const [goalPerWeek, setGoalPerWeek] = useState(3);
+const HabitForm: React.FC<HabitFormProps> = ({ onClose, onSave, initialHabit }) => {
+  const [title, setTitle] = useState(initialHabit?.title || '');
+  const [category, setCategory] = useState<HabitCategory>(initialHabit?.category || 'productivity');
+  const [frequency, setFrequency] = useState<number[]>(initialHabit?.frequency || [1, 3, 5]); // Days of week (0 = Sunday, 6 = Saturday)
+  const [goalPerWeek, setGoalPerWeek] = useState(initialHabit?.goalPerWeek || 3);
   
   const categories = [
     { id: 'learning', label: 'Learning', icon: BookOpenCheck, color: 'bg-blue-500' },
@@ -75,7 +76,9 @@ const HabitForm: React.FC<HabitFormProps> = ({ onClose, onSave }) => {
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
       >
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">Create New Habit</h2>
+          <h2 className="text-xl font-semibold">
+            {initialHabit ? 'Edit Habit' : 'Create New Habit'}
+          </h2>
           <motion.button 
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -189,7 +192,7 @@ const HabitForm: React.FC<HabitFormProps> = ({ onClose, onSave }) => {
               disabled={!title.trim()}
             >
               <Check size={18} />
-              <span>Create Habit</span>
+              <span>{initialHabit ? 'Save Changes' : 'Create Habit'}</span>
             </motion.button>
           </div>
         </form>

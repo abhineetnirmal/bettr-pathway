@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import CalendarPage from "./pages/Calendar";
 import ProgressPage from "./pages/Progress";
 import ProfilePage from "./pages/Profile";
+import HabitDetail from "./pages/HabitDetail";
 import { motion, AnimatePresence } from "framer-motion";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/calendar" element={<CalendarPage />} />
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/habit/:habitId" element={<HabitDetail />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

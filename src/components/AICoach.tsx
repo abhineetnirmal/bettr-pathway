@@ -1,7 +1,8 @@
-
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, ChevronUp, Send } from 'lucide-react';
+import { HabitsContext, HabitCategory } from '@/pages/Index';
+import { useToast } from '@/hooks/use-toast';
 
 interface AICoachProps {
   name?: string;
@@ -11,33 +12,122 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<{ text: string; sender: 'user' | 'ai' }[]>([
-    { text: `Hi there! I'm ${name}, your personal habit coach. How can I help you today?`, sender: 'ai' }
+    { text: `Hi there! I'm ${name}, your personal habit coach. Tell me about a habit you want to build, and I'll add it for you!`, sender: 'ai' }
   ]);
+  const { toast } = useToast();
+  const { habits, setHabits } = useContext(HabitsContext);
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
   };
 
+  const createHabitFromMessage = (message: string) => {
+    const habitCategories: { [key: string]: HabitCategory } = {
+      learning: 'learning',
+      reading: 'learning',
+      study: 'learning',
+      education: 'learning',
+      mindfulness: 'mindfulness',
+      meditation: 'mindfulness',
+      mental: 'mindfulness',
+      fitness: 'fitness',
+      exercise: 'fitness',
+      workout: 'fitness',
+      gym: 'fitness',
+      health: 'health',
+      nutrition: 'health',
+      diet: 'health',
+      sleep: 'health',
+      creativity: 'creativity',
+      art: 'creativity',
+      music: 'creativity',
+      writing: 'creativity',
+      productivity: 'productivity',
+      work: 'productivity',
+      focus: 'productivity',
+    };
+
+    let title = '';
+    let category: HabitCategory = 'productivity';
+    let frequency: number[] = [1, 3, 5];
+    let goalPerWeek = 3;
+
+    title = message.split(/[.!?]/)[0].trim();
+    if (title.length > 50) title = title.substring(0, 50);
+    
+    for (const [keyword, cat] of Object.entries(habitCategories)) {
+      if (message.toLowerCase().includes(keyword)) {
+        category = cat;
+        break;
+      }
+    }
+
+    if (message.toLowerCase().includes('daily') || message.toLowerCase().includes('every day')) {
+      frequency = [0, 1, 2, 3, 4, 5, 6];
+      goalPerWeek = 7;
+    } else if (message.toLowerCase().includes('weekday') || message.toLowerCase().includes('work day')) {
+      frequency = [1, 2, 3, 4, 5];
+      goalPerWeek = 5;
+    } else if (message.toLowerCase().includes('weekend')) {
+      frequency = [0, 6];
+      goalPerWeek = 2;
+    }
+
+    const newHabit = {
+      id: Date.now().toString(),
+      title,
+      category,
+      streak: 0,
+      completedToday: false,
+      totalCompletions: 0,
+      goalPerWeek,
+      completionsThisWeek: 0,
+      frequency,
+      completionHistory: []
+    };
+
+    return newHabit;
+  };
+
   const handleSend = () => {
     if (input.trim()) {
-      // Add user message
-      setMessages([...messages, { text: input, sender: 'user' }]);
+      const userMessage = input.trim();
+      setMessages(prev => [...prev, { text: userMessage, sender: 'user' }]);
       
-      // Simulate AI response (in a real app, this would call an API)
+      const shouldCreateHabit = 
+        (userMessage.toLowerCase().includes('habit') || 
+        userMessage.toLowerCase().includes('track') ||
+        userMessage.toLowerCase().includes('start') ||
+        userMessage.toLowerCase().includes('add')) &&
+        userMessage.length > 10;
+      
       setTimeout(() => {
-        const responses = [
-          "I think that's a great habit to build! Let's make it specific and achievable.",
-          "Remember to focus on consistency rather than perfection. Small steps lead to big changes!",
-          "Based on your progress, I'd recommend focusing on your mindfulness habit this week.",
-          "Great work on maintaining your streak! How does it feel?",
-          "Let's break this down into smaller, more manageable parts. What's the first tiny step you could take?",
-        ];
-        
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        setMessages(prev => [...prev, { text: randomResponse, sender: 'ai' }]);
+        if (shouldCreateHabit) {
+          const newHabit = createHabitFromMessage(userMessage);
+          
+          setHabits(prevHabits => [...prevHabits, newHabit]);
+          
+          const responseText = `I've added "${newHabit.title}" to your habits! I've set it as a ${newHabit.category} habit with a goal of ${newHabit.goalPerWeek} times per week. You can edit the details on your main screen if needed.`;
+          setMessages(prev => [...prev, { text: responseText, sender: 'ai' }]);
+          
+          toast({
+            title: "New Habit Created",
+            description: `${newHabit.title} has been added to your habits.`,
+          });
+        } else {
+          const responses = [
+            "I think that's a great habit to build! Try saying something like 'I want to start a daily meditation habit' and I'll add it for you.",
+            "Remember to focus on consistency rather than perfection. Small steps lead to big changes!",
+            "To add a new habit, just tell me what you want to track. For example, 'Add a reading habit for 20 minutes every day'.",
+            "Great work on maintaining your streaks! Which habit are you finding most valuable?",
+            "Let's break this down into smaller, more manageable parts. What specific habit would you like to track?",
+          ];
+          
+          const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+          setMessages(prev => [...prev, { text: randomResponse, sender: 'ai' }]);
+        }
       }, 1000);
       
-      // Clear input
       setInput("");
     }
   };
@@ -60,7 +150,6 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Chat header */}
             <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-bettr-blue to-bettr-purple flex items-center justify-center text-white font-bold">
@@ -73,7 +162,6 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
               </button>
             </div>
             
-            {/* Chat messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[350px]">
               {messages.map((message, index) => (
                 <motion.div 
@@ -96,7 +184,6 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
               ))}
             </div>
             
-            {/* Chat input */}
             <div className="p-3 border-t border-gray-100">
               <div className="flex items-center space-x-2">
                 <input
@@ -121,7 +208,6 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
         )}
       </AnimatePresence>
       
-      {/* Chat toggle button */}
       <motion.button
         className="w-14 h-14 rounded-full bg-gradient-to-r from-bettr-blue to-bettr-purple text-white flex items-center justify-center shadow-lg"
         whileHover={{ scale: 1.05 }}

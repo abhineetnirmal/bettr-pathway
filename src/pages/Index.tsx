@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Sparkles } from 'lucide-react';
@@ -31,10 +30,12 @@ export const HabitsContext = React.createContext<{
   habits: Habit[];
   setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
   toggleHabitCompletion: (habitId: string, date?: Date) => void;
+  updateHabit: (habitId: string, updatedData: Partial<Habit>) => void;
 }>({ 
   habits: [], 
   setHabits: () => {},
-  toggleHabitCompletion: () => {} 
+  toggleHabitCompletion: () => {},
+  updateHabit: () => {} 
 });
 
 const Index = () => {
@@ -43,20 +44,16 @@ const Index = () => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [progressData, setProgressData] = useState<{ day: string; completed: number }[]>([]);
   
-  // Load saved data on initial render
   useEffect(() => {
-    // Load onboarding status
     const onboardingCompleted = localStorage.getItem('onboardingCompleted');
     if (onboardingCompleted === 'true') {
       setShowOnboarding(false);
     }
     
-    // Load saved habits from localStorage
     const savedHabits = localStorage.getItem('habits');
     if (savedHabits) {
       const parsedHabits = JSON.parse(savedHabits);
       
-      // Make sure habits have completionHistory property
       const habitsWithHistory = parsedHabits.map((habit: any) => ({
         ...habit,
         completionHistory: habit.completionHistory || []
@@ -64,7 +61,6 @@ const Index = () => {
       
       setHabits(habitsWithHistory);
     } else {
-      // Set initial demo habits if no saved habits exist
       const today = new Date();
       const todayStr = format(today, 'yyyy-MM-dd');
       const yesterday = new Date(today);
@@ -121,10 +117,9 @@ const Index = () => {
     }
   }, []);
   
-  // Calculate progress data for the current week
   useEffect(() => {
     const today = new Date();
-    const firstDayOfWeek = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
+    const firstDayOfWeek = startOfWeek(today, { weekStartsOn: 1 });
     const lastDayOfWeek = endOfWeek(today, { weekStartsOn: 1 });
     
     const daysOfWeek = eachDayOfInterval({ start: firstDayOfWeek, end: lastDayOfWeek });
@@ -133,7 +128,6 @@ const Index = () => {
       const dayStr = format(day, 'yyyy-MM-dd');
       const dayName = format(day, 'EEE');
       
-      // Count completions for this day
       let completedCount = 0;
       
       habits.forEach(habit => {
@@ -149,7 +143,6 @@ const Index = () => {
     setProgressData(weeklyProgress);
   }, [habits]);
   
-  // Save habits whenever they change
   useEffect(() => {
     if (habits.length > 0) {
       localStorage.setItem('habits', JSON.stringify(habits));
@@ -169,11 +162,9 @@ const Index = () => {
       return prevHabits.map(habit => {
         if (habit.id !== id) return habit;
         
-        // Find if there's already a record for this date
         const existingIndex = habit.completionHistory.findIndex(h => h.date === dateStr);
         let newCompletionHistory = [...habit.completionHistory];
         
-        // Toggle completion for this date
         if (existingIndex >= 0) {
           const newCompleted = !habit.completionHistory[existingIndex].completed;
           newCompletionHistory[existingIndex] = { 
@@ -181,20 +172,16 @@ const Index = () => {
             completed: newCompleted 
           };
         } else {
-          // No record for this date, create a new one (completed)
           newCompletionHistory.push({ date: dateStr, completed: true });
         }
         
-        // Calculate streak
         let currentStreak = 0;
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
         
-        // Sort history by date (newest first)
         const sortedHistory = [...newCompletionHistory]
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         
-        // Count consecutive completed days
         for (const entry of sortedHistory) {
           if (entry.completed) {
             currentStreak++;
@@ -203,7 +190,6 @@ const Index = () => {
           }
         }
         
-        // Calculate completions this week
         const startDay = startOfWeek(today, { weekStartsOn: 1 });
         const endDay = endOfWeek(today, { weekStartsOn: 1 });
         
@@ -212,7 +198,6 @@ const Index = () => {
           return h.completed && entryDate >= startDay && entryDate <= endDay;
         }).length;
         
-        // Update completedToday based on the current date
         const isTodayCompleted = newCompletionHistory.some(
           h => h.date === format(new Date(), 'yyyy-MM-dd') && h.completed
         );
@@ -224,6 +209,19 @@ const Index = () => {
           streak: currentStreak,
           completionsThisWeek,
           totalCompletions: newCompletionHistory.filter(h => h.completed).length
+        };
+      });
+    });
+  };
+  
+  const updateHabit = (habitId: string, updatedData: Partial<Habit>) => {
+    setHabits(prevHabits => {
+      return prevHabits.map(habit => {
+        if (habit.id !== habitId) return habit;
+        
+        return {
+          ...habit,
+          ...updatedData
         };
       });
     });
@@ -253,14 +251,13 @@ const Index = () => {
   };
 
   return (
-    <HabitsContext.Provider value={{ habits, setHabits, toggleHabitCompletion }}>
+    <HabitsContext.Provider value={{ habits, setHabits, toggleHabitCompletion, updateHabit }}>
       <MainLayout>
         <AnimatePresence>
           {showOnboarding && <OnboardingScreen onComplete={completeOnboarding} />}
         </AnimatePresence>
         
         <div className="max-w-3xl mx-auto">
-          {/* Header section */}
           <motion.div 
             className="mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -271,7 +268,6 @@ const Index = () => {
             <p className="text-bettr-text-secondary">Track your progress and build consistency</p>
           </motion.div>
           
-          {/* Today's habits */}
           <motion.div 
             className="mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -316,17 +312,14 @@ const Index = () => {
             </div>
           </motion.div>
           
-          {/* Progress & Motivation Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <ProgressChart data={progressData} />
             <MotivationalQuote />
           </div>
         </div>
         
-        {/* AI Coach */}
         <AICoach />
         
-        {/* Habit Form Modal */}
         <AnimatePresence>
           {showHabitForm && (
             <HabitForm 

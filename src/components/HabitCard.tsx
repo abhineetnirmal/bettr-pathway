@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import StreakCounter from './StreakCounter';
-import { CheckCircle, Calendar, BookOpenCheck, Brain, Dumbbell, Heart, Music, Coffee } from 'lucide-react';
+import { CheckCircle, Calendar, BookOpenCheck, Brain, Dumbbell, Heart, Music, Coffee, ArrowRight } from 'lucide-react';
 import { HabitCategory } from '@/pages/Index';
 
 interface HabitCardProps {
@@ -52,7 +53,7 @@ const HabitCard: React.FC<HabitCardProps> = ({
 
   return (
     <motion.div 
-      className="habit-card"
+      className="habit-card relative"
       whileHover={{ y: -4 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -93,6 +94,16 @@ const HabitCard: React.FC<HabitCardProps> = ({
           />
         </div>
       </div>
+      
+      <Link 
+        to={`/habit/${id}`} 
+        className="absolute inset-0 flex items-end justify-end p-3 opacity-0 hover:opacity-100 transition-opacity"
+      >
+        <div className="flex items-center text-xs font-medium text-bettr-blue">
+          <span>View details</span>
+          <ArrowRight size={12} className="ml-1" />
+        </div>
+      </Link>
     </motion.div>
   );
 };
