@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, ChevronUp, Send, Loader2 } from 'lucide-react';
+import { MessageSquare, X, ChevronUp, Send, Loader2, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -17,13 +17,14 @@ interface Message {
   sender: 'user' | 'ai';
 }
 
-const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
+const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
-    { text: `Hi there! I'm ${name}, your personal habit coach. How can I help you today?`, sender: 'ai' }
+    { text: `Hi there! I'm ${name}, your personal habit and self-improvement coach. How can I help you today?`, sender: 'ai' }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -31,6 +32,28 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
+  };
+
+  // Fetch user profile when component mounts
+  useEffect(() => {
+    if (user) {
+      fetchUserProfile();
+    }
+  }, [user]);
+
+  const fetchUserProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user!.id)
+        .single();
+        
+      if (error) throw error;
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
   };
 
   // Scroll to bottom when messages change
@@ -53,7 +76,12 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
         const habitsContext = habits.length > 0 
           ? `User has ${habits.length} habits: ${habits.map(h => h.title).join(', ')}.
              Top performing habit: ${habits.sort((a, b) => b.streak - a.streak)[0]?.title || 'None'} 
-             with a streak of ${habits.sort((a, b) => b.streak - a.streak)[0]?.streak || 0} days.`
+             with a streak of ${habits.sort((a, b) => b.streak - a.streak)[0]?.streak || 0} days.
+             Habit categories: ${[...new Set(habits.map(h => h.category))].join(', ')}.
+             Total weekly completions: ${habits.reduce((sum, h) => sum + h.completionsThisWeek, 0)}.
+             Weekly goals: ${habits.reduce((sum, h) => sum + h.goalperweek, 0)}.
+             Completion rate: ${habits.reduce((sum, h) => sum + h.completionsThisWeek, 0) / 
+             Math.max(1, habits.reduce((sum, h) => sum + h.goalperweek, 0)) * 100}%.`
           : "User hasn't created any habits yet.";
 
         // Format messages for the API (excluding the initial greeting)
@@ -66,7 +94,8 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
         const { data, error } = await supabase.functions.invoke('ai-coach', {
           body: {
             messages: apiMessages,
-            userContext: habitsContext
+            userContext: habitsContext,
+            userProfile: userProfile
           }
         });
 
@@ -102,6 +131,18 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
     }
   };
 
+  // Suggestions for users who might not know what to ask
+  const suggestions = [
+    "How can I stay consistent with my habits?",
+    "What habits would improve my productivity?",
+    "Tips for building a morning routine?",
+    "How do sleep habits affect other areas of life?"
+  ];
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setInput(suggestion);
+  };
+
   return (
     <div className="fixed bottom-4 right-4 z-50">
       <AnimatePresence>
@@ -117,7 +158,7 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
             <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-bettr-blue to-bettr-purple flex items-center justify-center text-white font-bold">
-                  B
+                  <Sparkles size={16} />
                 </div>
                 <span className="font-medium">{name}</span>
               </div>
@@ -159,6 +200,25 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr" }) => {
                   </div>
                 </motion.div>
               )}
+              
+              {/* Suggestions (only show if no messages except the initial greeting) */}
+              {messages.length === 1 && (
+                <div className="mt-4">
+                  <p className="text-sm text-bettr-text-secondary mb-2">Try asking about:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-bettr-text-secondary transition-colors"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
               <div ref={messagesEndRef} />
             </div>
             

@@ -1,62 +1,196 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircleHeart } from 'lucide-react';
+import { RefreshCw, Quote } from 'lucide-react';
 
-interface Quote {
-  text: string;
-  author: string;
-}
-
-const quotes: Quote[] = [
-  { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
-  { text: "It's not about perfect. It's about effort.", author: "Jillian Michaels" },
-  { text: "Small daily improvements are the key to staggering long-term results.", author: "Unknown" },
-  { text: "Success is not final, failure is not fatal: It is the courage to continue that counts.", author: "Winston Churchill" },
-  { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
-  { text: "The habit of persistence is the habit of victory.", author: "Herbert Kaufman" },
-  { text: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
-  { text: "Your habits will determine your future.", author: "Jack Canfield" },
-  { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
-  { text: "Motivation is what gets you started. Habit is what keeps you going.", author: "Jim Ryun" },
+const quotes = [
+  { 
+    text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", 
+    author: "Aristotle",
+    category: "general"
+  },
+  { 
+    text: "Habits are the compound interest of self-improvement.", 
+    author: "James Clear",
+    category: "general" 
+  },
+  { 
+    text: "The secret of getting ahead is getting started.", 
+    author: "Mark Twain",
+    category: "productivity" 
+  },
+  { 
+    text: "You don't have to be great to start, but you have to start to be great.", 
+    author: "Zig Ziglar",
+    category: "general" 
+  },
+  { 
+    text: "The only way to do great work is to love what you do.", 
+    author: "Steve Jobs",
+    category: "creativity" 
+  },
+  { 
+    text: "Don't watch the clock; do what it does. Keep going.", 
+    author: "Sam Levenson",
+    category: "productivity" 
+  },
+  { 
+    text: "The mind is everything. What you think you become.", 
+    author: "Buddha",
+    category: "mindfulness" 
+  },
+  { 
+    text: "It is not the mountain we conquer, but ourselves.", 
+    author: "Edmund Hillary",
+    category: "fitness" 
+  },
+  { 
+    text: "Take care of your body. It's the only place you have to live.", 
+    author: "Jim Rohn",
+    category: "health" 
+  },
+  { 
+    text: "Learning is not attained by chance, it must be sought for with ardor and diligence.", 
+    author: "Abigail Adams",
+    category: "learning" 
+  },
+  { 
+    text: "Sleep is the best meditation.", 
+    author: "Dalai Lama",
+    category: "sleep" 
+  },
+  { 
+    text: "The difference between ordinary and extraordinary is that little extra.", 
+    author: "Jimmy Johnson",
+    category: "work" 
+  },
+  { 
+    text: "Small habits, remarkable results.",
+    author: "Bettr",
+    category: "general"
+  },
+  { 
+    text: "The secret of change is to focus all of your energy, not on fighting the old, but on building the new.",
+    author: "Socrates",
+    category: "general"
+  },
+  { 
+    text: "Each morning we are born again. What we do today matters most.",
+    author: "Buddha",
+    category: "mindfulness"
+  },
+  { 
+    text: "Success is the sum of small efforts, repeated day in and day out.",
+    author: "Robert Collier",
+    category: "productivity"
+  }
 ];
 
-const MotivationalQuote: React.FC = () => {
-  const [quote, setQuote] = useState<Quote>(quotes[0]);
-  const [fadeIn, setFadeIn] = useState(true);
+// Scientific facts about habits
+const habitFacts = [
+  "Research shows it takes an average of 66 days to form a new habit.",
+  "Habit stacking (connecting new habits to existing ones) increases success rate by 50%.",
+  "According to research, willpower is like a muscle that can be strengthened with use.",
+  "Morning habits are more likely to stick due to higher willpower levels early in the day.",
+  "Visual tracking of habits increases consistency by creating a 'don't break the chain' effect.",
+  "The 'habit loop' consists of cue, routine, and reward - understanding each improves habit formation.",
+  "Implementation intentions ('When X happens, I will do Y') double the chances of building a habit."
+];
+
+interface MotivationalQuoteProps {
+  className?: string;
+}
+
+const MotivationalQuote: React.FC<MotivationalQuoteProps> = ({ className }) => {
+  const [quote, setQuote] = useState<typeof quotes[0] | null>(null);
+  const [fact, setFact] = useState<string | null>(null);
+  const [showFact, setShowFact] = useState(false);
   
+  // Get a random quote
+  const getRandomQuote = () => {
+    const randomIndex = Math.floor(Math.random() * quotes.length);
+    setQuote(quotes[randomIndex]);
+  };
+  
+  // Get a random habit fact
+  const getRandomFact = () => {
+    const randomIndex = Math.floor(Math.random() * habitFacts.length);
+    setFact(habitFacts[randomIndex]);
+  };
+  
+  // Initial quote and fact on component mount
   useEffect(() => {
-    const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
-    setQuote(randomQuote);
+    getRandomQuote();
+    getRandomFact();
   }, []);
+  
+  // Refresh the quote
+  const handleRefresh = () => {
+    getRandomQuote();
+    getRandomFact();
+    setShowFact(false);
+  };
+  
+  // Toggle between quote and fact
+  const toggleContent = () => {
+    setShowFact(!showFact);
+  };
 
   return (
     <motion.div 
-      className="glass-card p-5 rounded-2xl"
+      className={`glass-card p-5 ${className}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.5, delay: 0.1 }}
     >
-      <div className="flex items-start mb-4 space-x-3">
-        <div className="p-2 rounded-full bg-bettr-blue/10 text-bettr-blue mt-1">
-          <MessageCircleHeart size={18} />
-        </div>
-        <div>
-          <h3 className="font-semibold text-lg text-bettr-text-primary">Daily Motivation</h3>
-          <p className="text-sm text-bettr-text-secondary">A little boost for your day</p>
+      <div className="flex justify-between items-start mb-4">
+        <h3 className="font-semibold">{showFact ? "Habit Science" : "Daily Motivation"}</h3>
+        <div className="flex space-x-1">
+          <motion.button 
+            onClick={toggleContent}
+            className="p-1.5 rounded-full hover:bg-gray-100 text-bettr-text-secondary transition-colors"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <Quote size={14} />
+          </motion.button>
+          <motion.button 
+            onClick={handleRefresh}
+            className="p-1.5 rounded-full hover:bg-gray-100 text-bettr-text-secondary transition-colors"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+          >
+            <RefreshCw size={14} />
+          </motion.button>
         </div>
       </div>
       
-      <motion.div
-        key={quote.text}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="mt-2"
-      >
-        <p className="text-lg font-medium italic text-bettr-text-primary">&ldquo;{quote.text}&rdquo;</p>
-        <p className="text-sm text-right text-bettr-text-secondary mt-2">— {quote.author}</p>
-      </motion.div>
+      <AnimatedContent show={showFact} content={fact} />
+      <AnimatedContent show={!showFact} content={quote ? `"${quote.text}"` : ""} />
+      
+      {!showFact && quote && (
+        <p className="text-sm text-bettr-text-secondary mt-2 text-right">
+          — {quote.author}
+        </p>
+      )}
+    </motion.div>
+  );
+};
+
+// Animated content component for smooth transitions
+const AnimatedContent = ({ show, content }: { show: boolean; content: string | null }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ 
+        opacity: show ? 1 : 0,
+        height: show ? 'auto' : 0
+      }}
+      className="overflow-hidden"
+    >
+      {show && content && (
+        <p className="text-bettr-text-primary italic">{content}</p>
+      )}
     </motion.div>
   );
 };

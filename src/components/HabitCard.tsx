@@ -2,7 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import StreakCounter from './StreakCounter';
-import { CheckCircle, Calendar, BookOpenCheck, Brain, Dumbbell, Heart, Music, Coffee } from 'lucide-react';
+import { CheckCircle, Calendar, BookOpenCheck, Brain, Dumbbell, Heart, Music, Coffee, Laptop, Moon } from 'lucide-react';
 import { HabitCategory } from './HabitForm';
 
 interface HabitCardProps {
@@ -34,7 +34,9 @@ const HabitCard: React.FC<HabitCardProps> = ({
     fitness: Dumbbell,
     health: Heart,
     creativity: Music,
-    productivity: Coffee
+    productivity: Coffee,
+    sleep: Moon,
+    work: Laptop
   };
   
   const categoryColors = {
@@ -43,12 +45,14 @@ const HabitCard: React.FC<HabitCardProps> = ({
     fitness: 'text-pink-500',
     health: 'text-green-500',
     creativity: 'text-orange-500',
-    productivity: 'text-indigo-500'
+    productivity: 'text-indigo-500',
+    sleep: 'text-blue-400',
+    work: 'text-gray-500'
   };
   
   const progress = (completionsThisWeek / goalperweek) * 100;
   
-  const Icon = categoryIcons[category];
+  const Icon = categoryIcons[category] || Coffee;
 
   return (
     <motion.div 
