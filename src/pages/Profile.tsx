@@ -22,10 +22,12 @@ const ProfilePage = () => {
     username: string | null;
     avatar_url: string | null;
     created_at: string;
+    onboarding_completed: boolean;
   }>({
     username: '',
     avatar_url: null,
     created_at: '',
+    onboarding_completed: false
   });
 
   // Load profile data
@@ -47,6 +49,7 @@ const ProfilePage = () => {
           username: data.username || user.email?.split('@')[0] || '',
           avatar_url: data.avatar_url,
           created_at: data.created_at,
+          onboarding_completed: data.onboarding_completed || false
         });
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -74,6 +77,7 @@ const ProfilePage = () => {
         .update({
           username: profile.username,
           avatar_url: profile.avatar_url,
+          onboarding_completed: profile.onboarding_completed
         })
         .eq('id', user.id);
 

@@ -162,14 +162,14 @@ const Index = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('onboarding_completed')
+          .select('*')
           .eq('id', user.id)
           .single();
           
         if (error) throw error;
         
         // If onboarding not completed, show onboarding
-        setShowOnboarding(data && !data.onboarding_completed);
+        setShowOnboarding(data && data.onboarding_completed === false);
       } catch (error) {
         console.error('Error checking onboarding status:', error);
       }
