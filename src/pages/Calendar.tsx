@@ -6,13 +6,15 @@ import MainLayout from '@/layouts/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { HabitsContext } from './Index';
 import { Button } from '@/components/ui/button';
-import { CalendarPlus } from 'lucide-react';
+import { CalendarPlus, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import CalendarEventForm from '@/components/CalendarEventForm';
 import CalendarFeedSync from '@/components/CalendarFeedSync';
 import CalendarEventList from '@/components/CalendarEventList';
 import { format, parseISO } from 'date-fns';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 // Define event type
 export interface CalendarEvent {
@@ -34,31 +36,49 @@ const CalendarPage = () => {
   const [activeTab, setActiveTab] = useState('schedule');
   const { toast } = useToast();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
   
-  // Load events from localStorage when component mounts
+  // Load events from Supabase when component mounts
   useEffect(() => {
-    const storedEvents = localStorage.getItem('calendarEvents');
-    if (storedEvents) {
+    if (!user) return;
+    
+    const fetchEvents = async () => {
+      setLoading(true);
       try {
-        // Parse stored events and convert date strings back to Date objects
-        const parsedEvents = JSON.parse(storedEvents);
-        const eventsWithDateObjects = parsedEvents.map((event: any) => ({
-          ...event,
-          date: new Date(event.date)
+        const { data, error } = await supabase
+          .from('calendar_events')
+          .select('*')
+          .order('date', { ascending: true });
+          
+        if (error) throw error;
+        
+        // Convert to CalendarEvent objects
+        const calendarEvents = data.map(event => ({
+          id: event.id,
+          title: event.title,
+          date: new Date(event.date),
+          startTime: event.start_time,
+          endTime: event.end_time,
+          description: event.description,
+          color: event.color
         }));
-        setEvents(eventsWithDateObjects);
+        
+        setEvents(calendarEvents);
       } catch (error) {
-        console.error('Error parsing stored events:', error);
-        // If there's an error parsing, start with empty events
-        setEvents([]);
+        console.error('Error fetching calendar events:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load calendar events. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
       }
-    }
-  }, []);
-  
-  // Save events to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('calendarEvents', JSON.stringify(events));
-  }, [events]);
+    };
+    
+    fetchEvents();
+  }, [user, toast]);
   
   // Transform habits into calendar events based on their frequency
   const getHabitEventsForCalendar = () => {
@@ -148,18 +168,50 @@ const CalendarPage = () => {
   );
   
   // Add new event
-  const handleAddEvent = (event: CalendarEvent) => {
-    const newEvents = [...events, event];
-    setEvents(newEvents);
-    setShowEventForm(false);
-    toast({
-      title: "Event Added",
-      description: `"${event.title}" has been added to your calendar.`
-    });
+  const handleAddEvent = async (event: CalendarEvent) => {
+    try {
+      // Insert into Supabase
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .insert({
+          title: event.title,
+          date: format(event.date, 'yyyy-MM-dd'),
+          start_time: event.startTime,
+          end_time: event.endTime,
+          description: event.description,
+          color: event.color,
+          user_id: user!.id
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      // Add to local state with the new ID
+      const newEvent: CalendarEvent = {
+        ...event,
+        id: data.id
+      };
+      
+      setEvents([...events, newEvent]);
+      setShowEventForm(false);
+      
+      toast({
+        title: "Event Added",
+        description: `"${event.title}" has been added to your calendar.`
+      });
+    } catch (error) {
+      console.error('Error adding event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add event. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Delete an event
-  const handleDeleteEvent = (eventId: string) => {
+  const handleDeleteEvent = async (eventId: string) => {
     // Only delete regular events, not habit events
     if (eventId.startsWith('habit-')) {
       toast({
@@ -169,12 +221,31 @@ const CalendarPage = () => {
       return;
     }
     
-    const newEvents = events.filter(event => event.id !== eventId);
-    setEvents(newEvents);
-    toast({
-      title: "Event Deleted",
-      description: "The event has been removed from your calendar."
-    });
+    try {
+      // Delete from Supabase
+      const { error } = await supabase
+        .from('calendar_events')
+        .delete()
+        .eq('id', eventId);
+        
+      if (error) throw error;
+      
+      // Update local state
+      const newEvents = events.filter(event => event.id !== eventId);
+      setEvents(newEvents);
+      
+      toast({
+        title: "Event Deleted",
+        description: "The event has been removed from your calendar."
+      });
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete event. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Toggle habit completion
@@ -189,24 +260,52 @@ const CalendarPage = () => {
   };
   
   // Import events from URL
-  const handleImportEvents = (url: string, importedEvents: CalendarEvent[]) => {
-    // Convert dates in imported events to Date objects
-    const eventsWithDateObjects = importedEvents.map(event => ({
-      ...event,
-      date: new Date(event.date)
-    }));
-    
-    // Merge with existing events, avoiding duplicates by ID
-    const existingIds = new Set(events.map(event => event.id));
-    const uniqueNewEvents = eventsWithDateObjects.filter(event => !existingIds.has(event.id));
-    
-    const newEvents = [...events, ...uniqueNewEvents];
-    setEvents(newEvents);
-    
-    toast({
-      title: "Calendar Synced",
-      description: `Successfully imported ${uniqueNewEvents.length} events from feed.`
-    });
+  const handleImportEvents = async (url: string, importedEvents: CalendarEvent[]) => {
+    try {
+      // Convert imported events to database format
+      const eventsToInsert = importedEvents.map(event => ({
+        title: event.title,
+        date: format(new Date(event.date), 'yyyy-MM-dd'),
+        start_time: event.startTime,
+        end_time: event.endTime,
+        description: event.description,
+        color: event.color,
+        user_id: user!.id
+      }));
+      
+      // Insert into Supabase
+      const { data, error } = await supabase
+        .from('calendar_events')
+        .insert(eventsToInsert)
+        .select();
+        
+      if (error) throw error;
+      
+      // Convert back to CalendarEvent objects and add to state
+      const newEvents = data.map(event => ({
+        id: event.id,
+        title: event.title,
+        date: new Date(event.date),
+        startTime: event.start_time,
+        endTime: event.end_time,
+        description: event.description,
+        color: event.color
+      }));
+      
+      setEvents([...events, ...newEvents]);
+      
+      toast({
+        title: "Calendar Synced",
+        description: `Successfully imported ${newEvents.length} events from feed.`
+      });
+    } catch (error) {
+      console.error('Error importing events:', error);
+      toast({
+        title: "Error",
+        description: "Failed to import events. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
@@ -260,7 +359,11 @@ const CalendarPage = () => {
                   <CardTitle>Daily Overview</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {date ? (
+                  {loading ? (
+                    <div className="flex justify-center py-12">
+                      <Loader2 className="animate-spin h-8 w-8 text-bettr-blue" />
+                    </div>
+                  ) : date ? (
                     <div className="space-y-4">
                       <p className="text-lg font-medium">
                         {date.toLocaleDateString('en-US', { 

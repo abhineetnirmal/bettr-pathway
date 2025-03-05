@@ -9,7 +9,131 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      calendar_events: {
+        Row: {
+          color: string
+          created_at: string
+          date: string
+          description: string | null
+          end_time: string | null
+          id: string
+          start_time: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          date: string
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          start_time?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          end_time?: string | null
+          id?: string
+          start_time?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      habit_completions: {
+        Row: {
+          completed_date: string
+          created_at: string
+          habit_id: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed_date: string
+          created_at?: string
+          habit_id?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed_date?: string
+          created_at?: string
+          habit_id?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          category: string
+          created_at: string
+          frequency: number[]
+          goalperweek: number
+          id: string
+          streak: number | null
+          title: string
+          totalcompletions: number | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          frequency: number[]
+          goalperweek: number
+          id?: string
+          streak?: number | null
+          title: string
+          totalcompletions?: number | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          frequency?: number[]
+          goalperweek?: number
+          id?: string
+          streak?: number | null
+          title?: string
+          totalcompletions?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
