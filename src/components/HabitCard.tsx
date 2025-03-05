@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import StreakCounter from './StreakCounter';
 import { CheckCircle, Calendar, BookOpenCheck, Brain, Dumbbell, Heart, Music, Coffee } from 'lucide-react';
-import { HabitCategory } from '@/pages/Index';
+import { HabitCategory } from './HabitForm';
 
 interface HabitCardProps {
   id: string;
@@ -12,7 +11,7 @@ interface HabitCardProps {
   streak: number;
   completedToday: boolean;
   totalCompletions: number;
-  goalPerWeek: number;
+  goalperweek: number;
   completionsThisWeek: number;
   onToggle: (id: string) => void;
 }
@@ -24,7 +23,7 @@ const HabitCard: React.FC<HabitCardProps> = ({
   streak,
   completedToday,
   totalCompletions,
-  goalPerWeek,
+  goalperweek,
   completionsThisWeek,
   onToggle
 }) => {
@@ -46,7 +45,7 @@ const HabitCard: React.FC<HabitCardProps> = ({
     productivity: 'text-indigo-500'
   };
   
-  const progress = (completionsThisWeek / goalPerWeek) * 100;
+  const progress = (completionsThisWeek / goalperweek) * 100;
   
   const Icon = categoryIcons[category];
 
@@ -79,7 +78,7 @@ const HabitCard: React.FC<HabitCardProps> = ({
         
         <div className="flex items-center space-x-1 text-sm text-bettr-text-secondary">
           <Calendar size={14} />
-          <span>{completionsThisWeek}/{goalPerWeek} this week</span>
+          <span>{completionsThisWeek}/{goalperweek} this week</span>
         </div>
       </div>
       

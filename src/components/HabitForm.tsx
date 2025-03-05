@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Check, BookOpenCheck, Brain, Dumbbell, Heart, Music, Coffee } from 'lucide-react';
 
-type HabitCategory = 'learning' | 'mindfulness' | 'fitness' | 'health' | 'creativity' | 'productivity';
+export type HabitCategory = 'learning' | 'mindfulness' | 'fitness' | 'health' | 'creativity' | 'productivity';
 
 interface HabitFormProps {
   onClose: () => void;
@@ -11,7 +10,7 @@ interface HabitFormProps {
     title: string;
     category: HabitCategory;
     frequency: number[];
-    goalPerWeek: number;
+    goalperweek: number;
   }) => void;
 }
 
@@ -19,7 +18,7 @@ const HabitForm: React.FC<HabitFormProps> = ({ onClose, onSave }) => {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState<HabitCategory>('productivity');
   const [frequency, setFrequency] = useState<number[]>([1, 3, 5]); // Days of week (0 = Sunday, 6 = Saturday)
-  const [goalPerWeek, setGoalPerWeek] = useState(3);
+  const [goalperweek, setGoalperweek] = useState(3);  // Changed variable name to match DB schema
   
   const categories = [
     { id: 'learning', label: 'Learning', icon: BookOpenCheck, color: 'bg-blue-500' },
@@ -55,7 +54,7 @@ const HabitForm: React.FC<HabitFormProps> = ({ onClose, onSave }) => {
         title,
         category,
         frequency,
-        goalPerWeek
+        goalperweek
       });
     }
   };
@@ -157,11 +156,11 @@ const HabitForm: React.FC<HabitFormProps> = ({ onClose, onSave }) => {
                   key={num}
                   type="button"
                   className={`px-3 py-2 rounded-lg ${
-                    goalPerWeek === num
+                    goalperweek === num
                       ? 'bg-bettr-blue text-white'
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                   } transition-colors`}
-                  onClick={() => setGoalPerWeek(num)}
+                  onClick={() => setGoalperweek(num)}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
