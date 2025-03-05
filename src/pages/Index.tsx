@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Sparkles } from 'lucide-react';
@@ -23,7 +22,7 @@ export interface Habit {
   streak: number;
   completedToday: boolean;
   totalCompletions: number;
-  goalPerWeek: number;
+  goalperweek: number;
   completionsThisWeek: number;
   frequency: number[];
   completionHistory: { date: string; completed: boolean }[];
@@ -138,7 +137,7 @@ const Index = () => {
             streak: currentStreak,
             completedToday,
             totalCompletions: habitCompletions.length,
-            goalPerWeek: habit.goalPerWeek,
+            goalperweek: habit.goalperweek,
             completionsThisWeek,
             frequency: habit.frequency,
             completionHistory
@@ -158,20 +157,21 @@ const Index = () => {
       }
     };
     
-    // Check if this is the first login
+    // Check if this is the first login by checking if onboarding has been completed in profiles
     const checkOnboarding = async () => {
       try {
         const { data, error } = await supabase
-          .from('habits')
-          .select('id')
-          .limit(1);
+          .from('profiles')
+          .select('onboarding_completed')
+          .eq('id', user.id)
+          .single();
           
         if (error) throw error;
         
-        // If no habits exist, show onboarding
-        setShowOnboarding(data.length === 0);
+        // If onboarding not completed, show onboarding
+        setShowOnboarding(data && !data.onboarding_completed);
       } catch (error) {
-        console.error('Error checking habits:', error);
+        console.error('Error checking onboarding status:', error);
       }
     };
     
@@ -208,8 +208,22 @@ const Index = () => {
     setProgressData(weeklyProgress);
   }, [habits]);
   
-  const completeOnboarding = () => {
-    setShowOnboarding(false);
+  const completeOnboarding = async () => {
+    if (!user) return;
+    
+    try {
+      // Update profile to mark onboarding as completed
+      const { error } = await supabase
+        .from('profiles')
+        .update({ onboarding_completed: true })
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      setShowOnboarding(false);
+    } catch (error) {
+      console.error('Error updating onboarding status:', error);
+    }
   };
   
   const toggleHabitCompletion = async (id: string, date?: Date) => {
@@ -330,7 +344,7 @@ const Index = () => {
     title: string;
     category: HabitCategory;
     frequency: number[];
-    goalPerWeek: number;
+    goalperweek: number;
   }) => {
     try {
       // Insert the new habit into Supabase
@@ -340,7 +354,7 @@ const Index = () => {
           title: habitData.title,
           category: habitData.category,
           frequency: habitData.frequency,
-          goalPerWeek: habitData.goalPerWeek,
+          goalperweek: habitData.goalperweek,
           user_id: user!.id
         })
         .select()
@@ -352,11 +366,11 @@ const Index = () => {
       const newHabit: Habit = {
         id: data.id,
         title: data.title,
-        category: data.category,
+        category: data.category as HabitCategory,
         streak: 0,
         completedToday: false,
         totalCompletions: 0,
-        goalPerWeek: data.goalPerWeek,
+        goalperweek: data.goalperweek,
         completionsThisWeek: 0,
         frequency: data.frequency,
         completionHistory: []
@@ -429,7 +443,14 @@ const Index = () => {
                 {habits.map((habit) => (
                   <HabitCard 
                     key={habit.id}
-                    {...habit}
+                    id={habit.id}
+                    title={habit.title}
+                    category={habit.category}
+                    streak={habit.streak}
+                    completedToday={habit.completedToday}
+                    totalCompletions={habit.totalCompletions}
+                    goalperweek={habit.goalperweek}
+                    completionsThisWeek={habit.completionsThisWeek}
                     onToggle={toggleHabitCompletion}
                   />
                 ))}
