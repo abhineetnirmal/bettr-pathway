@@ -29,7 +29,6 @@ export interface Habit {
   completionHistory: { date: string; completed: boolean }[];
 }
 
-// Create a context to share habits data across components
 export const HabitsContext = createContext<{
   habits: Habit[];
   setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
@@ -52,7 +51,6 @@ const Index = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Get current time for greeting
   const getCurrentTimeOfDay = () => {
     const hour = new Date().getHours();
     if (hour < 12) return { greeting: 'Good morning', icon: <Sun className="text-yellow-500" /> };
@@ -64,14 +62,12 @@ const Index = () => {
   const today = new Date();
   const formattedDate = format(today, 'EEEE, MMMM do, yyyy');
   
-  // Load habits from Supabase on initial render
   useEffect(() => {
     if (!user) return;
     
     const fetchHabits = async () => {
       setLoading(true);
       try {
-        // Fetch habits from Supabase
         const { data: habitsData, error: habitsError } = await supabase
           .from('habits')
           .select('*')
@@ -79,21 +75,17 @@ const Index = () => {
           
         if (habitsError) throw habitsError;
         
-        // Fetch habit completions
         const { data: completionsData, error: completionsError } = await supabase
           .from('habit_completions')
           .select('*');
           
         if (completionsError) throw completionsError;
         
-        // Process the fetched data
         const processedHabits = habitsData.map(habit => {
-          // Get completions for this habit
           const habitCompletions = completionsData.filter(
             completion => completion.habit_id === habit.id
           );
           
-          // Calculate completions this week
           const today = new Date();
           const startDay = startOfWeek(today, { weekStartsOn: 1 });
           const endDay = endOfWeek(today, { weekStartsOn: 1 });
@@ -103,42 +95,36 @@ const Index = () => {
             return completionDate >= startDay && completionDate <= endDay;
           }).length;
           
-          // Calculate streak
           let currentStreak = 0;
           const sortedCompletions = [...habitCompletions].sort(
             (a, b) => new Date(b.completed_date).getTime() - new Date(a.completed_date).getTime()
           );
           
-          // Sort completion dates in descending order
           const sortedDates = sortedCompletions.map(c => new Date(c.completed_date));
           
           if (sortedDates.length > 0) {
-            currentStreak = 1; // Start with 1 for the most recent completion
+            currentStreak = 1;
             
             for (let i = 0; i < sortedDates.length - 1; i++) {
               const currentDate = sortedDates[i];
               const prevDate = sortedDates[i + 1];
               
-              // Calculate days between completions
               const diffTime = Math.abs(currentDate.getTime() - prevDate.getTime());
               const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
               
-              // If days between completions is exactly 1, continue the streak
               if (diffDays === 1) {
                 currentStreak++;
               } else {
-                break; // Break the streak
+                break;
               }
             }
           }
           
-          // Check if completed today
           const todayStr = format(today, 'yyyy-MM-dd');
           const completedToday = habitCompletions.some(
             completion => completion.completed_date === todayStr
           );
           
-          // Format completion history for the component
           const completionHistory = habitCompletions.map(completion => ({
             date: completion.completed_date,
             completed: true
@@ -171,7 +157,6 @@ const Index = () => {
       }
     };
     
-    // Check if this is the first login by checking if onboarding has been completed in profiles
     const checkOnboarding = async () => {
       try {
         const { data, error } = await supabase
@@ -182,7 +167,6 @@ const Index = () => {
           
         if (error) throw error;
         
-        // If onboarding_completed is false or null, show onboarding
         setShowOnboarding(data && data.onboarding_completed === false);
       } catch (error) {
         console.error('Error checking onboarding status:', error);
@@ -191,13 +175,11 @@ const Index = () => {
     
     fetchHabits();
     checkOnboarding();
-    
   }, [user, toast]);
   
-  // Calculate progress data for the current week
   useEffect(() => {
     const today = new Date();
-    const firstDayOfWeek = startOfWeek(today, { weekStartsOn: 1 }); // Start on Monday
+    const firstDayOfWeek = startOfWeek(today, { weekStartsOn: 1 });
     const lastDayOfWeek = endOfWeek(today, { weekStartsOn: 1 });
     
     const daysOfWeek = eachDayOfInterval({ start: firstDayOfWeek, end: lastDayOfWeek });
@@ -206,7 +188,6 @@ const Index = () => {
       const dayStr = format(day, 'yyyy-MM-dd');
       const dayName = format(day, 'EEE');
       
-      // Count completions for this day
       let completedCount = 0;
       
       habits.forEach(habit => {
@@ -222,9 +203,7 @@ const Index = () => {
     setProgressData(weeklyProgress);
   }, [habits]);
   
-  // Handle toggling between motivational quote and habit science
   useEffect(() => {
-    // Store preference in localStorage
     const savedPreference = localStorage.getItem('bettr-motivation-preference');
     if (savedPreference) {
       setQuoteOrScience(savedPreference as 'quote' | 'science');
@@ -235,7 +214,6 @@ const Index = () => {
     if (!user) return;
     
     try {
-      // Update profile to mark onboarding as completed
       const { error } = await supabase
         .from('profiles')
         .update({ onboarding_completed: true })
@@ -254,17 +232,14 @@ const Index = () => {
     const dateStr = format(today, 'yyyy-MM-dd');
     
     try {
-      // Find the habit 
       const habit = habits.find(h => h.id === id);
       if (!habit) {
         throw new Error('Habit not found');
       }
       
-      // Check if there's already a completion record for this date
       const existingCompletion = habit.completionHistory.find(h => h.date === dateStr);
       
       if (existingCompletion) {
-        // If already completed, delete the record
         const { error } = await supabase
           .from('habit_completions')
           .delete()
@@ -272,7 +247,6 @@ const Index = () => {
           
         if (error) throw error;
       } else {
-        // If not completed, insert a new record
         const { error } = await supabase
           .from('habit_completions')
           .insert({
@@ -284,34 +258,26 @@ const Index = () => {
         if (error) throw error;
       }
       
-      // Update the local state
       setHabits(prevHabits => {
         return prevHabits.map(habit => {
           if (habit.id !== id) return habit;
           
-          // Find if there's already a record for this date
           const existingIndex = habit.completionHistory.findIndex(h => h.date === dateStr);
           let newCompletionHistory = [...habit.completionHistory];
           
-          // Toggle completion for this date
           if (existingIndex >= 0) {
-            // Remove the record
             newCompletionHistory = newCompletionHistory.filter((_, i) => i !== existingIndex);
           } else {
-            // Add a new record
             newCompletionHistory.push({ date: dateStr, completed: true });
           }
           
-          // Calculate streak
           let currentStreak = 0;
           const yesterday = new Date(today);
           yesterday.setDate(yesterday.getDate() - 1);
           
-          // Sort history by date (newest first)
           const sortedHistory = [...newCompletionHistory]
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
           
-          // Count consecutive completed days
           for (const entry of sortedHistory) {
             if (entry.completed) {
               currentStreak++;
@@ -320,7 +286,6 @@ const Index = () => {
             }
           }
           
-          // Calculate completions this week
           const startDay = startOfWeek(today, { weekStartsOn: 1 });
           const endDay = endOfWeek(today, { weekStartsOn: 1 });
           
@@ -329,7 +294,6 @@ const Index = () => {
             return h.completed && entryDate >= startDay && entryDate <= endDay;
           }).length;
           
-          // Update completedToday based on the current date
           const isTodayCompleted = newCompletionHistory.some(
             h => h.date === format(new Date(), 'yyyy-MM-dd') && h.completed
           );
@@ -375,7 +339,6 @@ const Index = () => {
     goalperweek: number;
   }) => {
     try {
-      // Insert the new habit into Supabase
       const { data, error } = await supabase
         .from('habits')
         .insert({
@@ -390,7 +353,6 @@ const Index = () => {
         
       if (error) throw error;
       
-      // Create the new habit object
       const newHabit: Habit = {
         id: data.id,
         title: data.title,
@@ -404,16 +366,14 @@ const Index = () => {
         completionHistory: []
       };
       
-      // Update state with the new habit
       setHabits(prev => [newHabit, ...prev]);
       setShowHabitForm(false);
       
       toast({
         title: "Habit created!",
-        description: `'${habitData.title}' has been added to your habits."
+        description: `'${habitData.title}' has been added to your habits.`
       });
       
-      // Check if this is the first habit added (achievement)
       if (habits.length === 0) {
         toast({
           title: "Achievement unlocked!",
@@ -439,7 +399,6 @@ const Index = () => {
         </AnimatePresence>
         
         <div className="max-w-3xl mx-auto">
-          {/* Header section with date and greeting */}
           <motion.div 
             className="mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -457,7 +416,6 @@ const Index = () => {
             <p className="text-bettr-text-secondary dark:text-gray-300 mt-1">Track your progress and build consistency</p>
           </motion.div>
           
-          {/* Today's habits */}
           <motion.div 
             className="mb-8"
             initial={{ opacity: 0, y: 20 }}
@@ -515,7 +473,6 @@ const Index = () => {
             )}
           </motion.div>
           
-          {/* Progress & Motivation Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <ProgressChart data={progressData} />
             <div>
@@ -523,13 +480,13 @@ const Index = () => {
                 <h3 className="text-lg font-medium dark:text-white">Motivation</h3>
                 <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 rounded-full p-1">
                   <button 
-                    className={`px-3 py-1 text-sm rounded-full transition ${quoteOrScience === 'quote' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}
+                    className={"px-3 py-1 text-sm rounded-full transition " + (quoteOrScience === 'quote' ? 'bg-white dark:bg-gray-700 shadow-sm' : '')}
                     onClick={() => handleMotivationToggle('quote')}
                   >
                     Daily
                   </button>
                   <button 
-                    className={`px-3 py-1 text-sm rounded-full transition ${quoteOrScience === 'science' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}
+                    className={"px-3 py-1 text-sm rounded-full transition " + (quoteOrScience === 'science' ? 'bg-white dark:bg-gray-700 shadow-sm' : '')}
                     onClick={() => handleMotivationToggle('science')}
                   >
                     Science
@@ -540,14 +497,11 @@ const Index = () => {
             </div>
           </div>
           
-          {/* Calendar Section (integrated from previous Calendar page) */}
           <CalendarSection />
         </div>
         
-        {/* AI Coach */}
         <AICoach />
         
-        {/* Habit Form Modal */}
         <AnimatePresence>
           {showHabitForm && (
             <HabitForm 
