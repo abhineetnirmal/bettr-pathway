@@ -99,12 +99,13 @@ const habitFacts = [
 
 interface MotivationalQuoteProps {
   className?: string;
+  variant?: 'quote' | 'science';
 }
 
-const MotivationalQuote: React.FC<MotivationalQuoteProps> = ({ className }) => {
+const MotivationalQuote: React.FC<MotivationalQuoteProps> = ({ className, variant = 'quote' }) => {
   const [quote, setQuote] = useState<typeof quotes[0] | null>(null);
   const [fact, setFact] = useState<string | null>(null);
-  const [showFact, setShowFact] = useState(false);
+  const [showFact, setShowFact] = useState(variant === 'science');
   
   // Get a random quote
   const getRandomQuote = () => {
@@ -123,12 +124,16 @@ const MotivationalQuote: React.FC<MotivationalQuoteProps> = ({ className }) => {
     getRandomQuote();
     getRandomFact();
   }, []);
+
+  // Update showFact when variant changes
+  useEffect(() => {
+    setShowFact(variant === 'science');
+  }, [variant]);
   
   // Refresh the quote
   const handleRefresh = () => {
     getRandomQuote();
     getRandomFact();
-    setShowFact(false);
   };
   
   // Toggle between quote and fact
