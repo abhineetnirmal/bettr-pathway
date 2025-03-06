@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RefreshCw, Download } from 'lucide-react';
-import { CalendarEvent } from '@/pages/Calendar';
+import { CalendarEvent } from '@/components/CalendarSection';
 import { useToast } from '@/hooks/use-toast';
 
 interface CalendarFeedSyncProps {

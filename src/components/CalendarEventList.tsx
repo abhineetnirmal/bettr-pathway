@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CalendarEvent } from '@/pages/Calendar';
+import { CalendarEvent } from '@/components/CalendarSection';
 import { Trash2, Clock, List, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
