@@ -12,8 +12,20 @@ interface CalendarEventListProps {
 }
 
 const CalendarEventList: React.FC<CalendarEventListProps> = ({ events, onDelete, onToggleHabit }) => {
+  // Deduplicate events by id before sorting
+  const uniqueEventIds = new Set<string>();
+  const deduplicatedEvents = events.filter(event => {
+    // For habit events, create a composite key of habit-id-date to ensure uniqueness
+    const key = event.isHabit ? `${event.id}-${event.date.toISOString().split('T')[0]}` : event.id;
+    if (uniqueEventIds.has(key)) {
+      return false;
+    }
+    uniqueEventIds.add(key);
+    return true;
+  });
+  
   // Sort events by start time if available, and place habits at the top
-  const sortedEvents = [...events].sort((a, b) => {
+  const sortedEvents = [...deduplicatedEvents].sort((a, b) => {
     // First separate habits and events
     if (a.isHabit && !b.isHabit) return -1;
     if (!a.isHabit && b.isHabit) return 1;
