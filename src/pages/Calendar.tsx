@@ -1,3 +1,4 @@
+
 import React, { useContext, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar } from "@/components/ui/calendar";
@@ -37,6 +38,7 @@ const CalendarPage = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   
+  // Fetch calendar events from the database
   useEffect(() => {
     if (!user) return;
     
@@ -76,6 +78,7 @@ const CalendarPage = () => {
     fetchEvents();
   }, [user, toast]);
   
+  // Convert habits into calendar events
   const getHabitEventsForCalendar = () => {
     if (habitsLoading || !habits || habits.length === 0) return [];
     
@@ -84,6 +87,7 @@ const CalendarPage = () => {
     habits.forEach(habit => {
       const completions = habit.completionHistory || [];
       
+      // Add completed habits
       completions.forEach(completion => {
         if (!completion.date) return;
         
@@ -102,6 +106,7 @@ const CalendarPage = () => {
         habitEvents.push(habitEvent);
       });
       
+      // Add scheduled habits based on frequency
       if (habit.frequency && habit.frequency.length > 0) {
         const today = new Date();
         const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -113,7 +118,7 @@ const CalendarPage = () => {
           if (habit.frequency.includes(dayOfWeek)) {
             const dateStr = format(day, 'yyyy-MM-dd');
             
-            const alreadyCompleted = habit.completionHistory.some(
+            const alreadyCompleted = completions.some(
               h => h.date === dateStr && h.completed
             );
             
@@ -136,6 +141,7 @@ const CalendarPage = () => {
     return habitEvents;
   };
   
+  // Get color for habit based on category
   const getHabitColor = (category: string): string => {
     switch (category) {
       case 'learning':
@@ -161,11 +167,13 @@ const CalendarPage = () => {
   
   const allHabitEvents = getHabitEventsForCalendar();
   
+  // Filter events for the selected day
   const eventsForSelectedDay = [...events, ...allHabitEvents].filter(event => 
     date && event.date && 
     new Date(event.date).toDateString() === date.toDateString()
   );
   
+  // Add new event to calendar
   const handleAddEvent = async (event: CalendarEvent) => {
     try {
       const { data, error } = await supabase
@@ -206,6 +214,7 @@ const CalendarPage = () => {
     }
   };
   
+  // Delete an event from calendar
   const handleDeleteEvent = async (eventId: string) => {
     if (eventId.startsWith('habit-')) {
       toast({
@@ -240,6 +249,7 @@ const CalendarPage = () => {
     }
   };
   
+  // Toggle habit completion status
   const handleToggleHabit = (habitId: string, eventDate: Date, completed: boolean) => {
     const parts = habitId.split('-');
     if (parts.length >= 2) {
@@ -253,6 +263,7 @@ const CalendarPage = () => {
     }
   };
   
+  // Import events from external calendar
   const handleImportEvents = async (url: string, importedEvents: CalendarEvent[]) => {
     try {
       const eventsToInsert = importedEvents.map(event => ({
@@ -308,7 +319,7 @@ const CalendarPage = () => {
         className="container mx-auto"
       >
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Your Calendar</h1>
+          <h1 className="text-3xl font-bold dark:text-white">Your Calendar</h1>
           <div className="flex space-x-2">
             <Button 
               variant="default" 
@@ -330,7 +341,7 @@ const CalendarPage = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Habit Schedule</CardTitle>
+                  <CardTitle className="dark:text-white">Habit Schedule</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex justify-center">
@@ -338,7 +349,7 @@ const CalendarPage = () => {
                       mode="single"
                       selected={date}
                       onSelect={setDate}
-                      className="rounded-md border"
+                      className="rounded-md border dark:bg-gray-800 dark:text-white"
                     />
                   </div>
                 </CardContent>
@@ -346,7 +357,7 @@ const CalendarPage = () => {
               
               <Card>
                 <CardHeader>
-                  <CardTitle>Daily Overview</CardTitle>
+                  <CardTitle className="dark:text-white">Daily Overview</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {loading || habitsLoading ? (
@@ -355,7 +366,7 @@ const CalendarPage = () => {
                     </div>
                   ) : date ? (
                     <div className="space-y-4">
-                      <p className="text-lg font-medium">
+                      <p className="text-lg font-medium dark:text-white">
                         {date.toLocaleDateString('en-US', { 
                           weekday: 'long',
                           year: 'numeric', 
@@ -365,7 +376,7 @@ const CalendarPage = () => {
                       </p>
                       
                       <div className="space-y-3">
-                        <p className="text-sm text-gray-500 font-medium">Events and Habits:</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-300 font-medium">Events and Habits:</p>
                         {eventsForSelectedDay.length > 0 ? (
                           <CalendarEventList 
                             events={eventsForSelectedDay} 
@@ -389,7 +400,7 @@ const CalendarPage = () => {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-gray-500">Select a date to view your habits</p>
+                    <p className="text-gray-500 dark:text-gray-400">Select a date to view your habits</p>
                   )}
                 </CardContent>
               </Card>
@@ -399,7 +410,7 @@ const CalendarPage = () => {
           <TabsContent value="sync">
             <Card>
               <CardHeader>
-                <CardTitle>Sync External Calendars</CardTitle>
+                <CardTitle className="dark:text-white">Sync External Calendars</CardTitle>
               </CardHeader>
               <CardContent>
                 <CalendarFeedSync onImport={handleImportEvents} />

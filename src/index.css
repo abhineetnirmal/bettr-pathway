@@ -82,7 +82,7 @@
 }
 
 .btn-secondary {
-  @apply bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-lg transition-colors;
+  @apply bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-white px-4 py-2 rounded-lg transition-colors;
 }
 
 .glass-card {
@@ -119,4 +119,17 @@
 
 .modal-content {
   @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg w-full max-w-md mx-auto overflow-hidden z-50 max-h-[90vh] overflow-y-auto;
+}
+
+/* Dark mode text specific adjustments */
+.dark .text-bettr-text-primary {
+  @apply text-white;
+}
+
+.dark .text-bettr-text-secondary {
+  @apply text-gray-300;
+}
+
+.dark .text-gray-500 {
+  @apply text-gray-400;
 }

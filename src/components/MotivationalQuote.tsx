@@ -149,11 +149,13 @@ const MotivationalQuote: React.FC<MotivationalQuoteProps> = ({ className, varian
       transition={{ duration: 0.5, delay: 0.1 }}
     >
       <div className="flex justify-between items-start mb-4">
-        <h3 className="font-semibold">{showFact ? "Habit Science" : "Daily Motivation"}</h3>
+        <h3 className="font-semibold dark:text-white">
+          {showFact ? "Habit Science" : "Daily Motivation"}
+        </h3>
         <div className="flex space-x-1">
           <motion.button 
             onClick={toggleContent}
-            className="p-1.5 rounded-full hover:bg-gray-100 text-bettr-text-secondary transition-colors"
+            className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-bettr-text-secondary dark:text-gray-300 transition-colors"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
@@ -161,7 +163,7 @@ const MotivationalQuote: React.FC<MotivationalQuoteProps> = ({ className, varian
           </motion.button>
           <motion.button 
             onClick={handleRefresh}
-            className="p-1.5 rounded-full hover:bg-gray-100 text-bettr-text-secondary transition-colors"
+            className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-bettr-text-secondary dark:text-gray-300 transition-colors"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
           >
@@ -174,7 +176,7 @@ const MotivationalQuote: React.FC<MotivationalQuoteProps> = ({ className, varian
       <AnimatedContent show={!showFact} content={quote ? `"${quote.text}"` : ""} />
       
       {!showFact && quote && (
-        <p className="text-sm text-bettr-text-secondary mt-2 text-right">
+        <p className="text-sm text-bettr-text-secondary dark:text-gray-400 mt-2 text-right">
           — {quote.author}
         </p>
       )}
@@ -194,7 +196,7 @@ const AnimatedContent = ({ show, content }: { show: boolean; content: string | n
       className="overflow-hidden"
     >
       {show && content && (
-        <p className="text-bettr-text-primary italic">{content}</p>
+        <p className="text-bettr-text-primary dark:text-white italic">{content}</p>
       )}
     </motion.div>
   );
