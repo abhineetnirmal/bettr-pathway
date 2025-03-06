@@ -145,10 +145,8 @@ const ProfilePage = () => {
 
           <div className="flex-1">
             <Tabs defaultValue="account" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-1">
                 <TabsTrigger value="account">Account</TabsTrigger>
-                <TabsTrigger value="preferences">Preferences</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
               </TabsList>
               
               <TabsContent value="account" className="space-y-4 pt-4">
@@ -205,99 +203,6 @@ const ProfilePage = () => {
                       )}
                     </Button>
                   </CardFooter>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Achievements</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      You've earned 3 out of 12 possible achievements.
-                    </p>
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div className="p-2 border rounded-md bg-green-50 border-green-200">
-                        <span className="block text-xl mb-1">🔥</span>
-                        <span className="text-sm font-medium">7-Day Streak</span>
-                      </div>
-                      <div className="p-2 border rounded-md bg-green-50 border-green-200">
-                        <span className="block text-xl mb-1">🚀</span>
-                        <span className="text-sm font-medium">First Habit</span>
-                      </div>
-                      <div className="p-2 border rounded-md bg-green-50 border-green-200">
-                        <span className="block text-xl mb-1">⭐</span>
-                        <span className="text-sm font-medium">Perfect Week</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="preferences" className="pt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>User Preferences</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Customize your app experience with these settings.
-                    </p>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Daily Reminders</p>
-                          <p className="text-sm text-muted-foreground">Get notifications for your habits</p>
-                        </div>
-                        <Button variant="outline">Configure</Button>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Theme</p>
-                          <p className="text-sm text-muted-foreground">Choose light or dark mode</p>
-                        </div>
-                        <Button variant="outline">Light</Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-              
-              <TabsContent value="notifications" className="pt-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Notification Settings</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Manage how and when you receive notifications.
-                    </p>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Push Notifications</p>
-                          <p className="text-sm text-muted-foreground">Receive alerts on your device</p>
-                        </div>
-                        <Button variant="outline">Enabled</Button>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Email Digests</p>
-                          <p className="text-sm text-muted-foreground">Weekly summary of your progress</p>
-                        </div>
-                        <Button variant="outline">Disabled</Button>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium">Quiet Hours</p>
-                          <p className="text-sm text-muted-foreground">Don't disturb during these times</p>
-                        </div>
-                        <Button variant="outline">Configure</Button>
-                      </div>
-                    </div>
-                  </CardContent>
                 </Card>
               </TabsContent>
             </Tabs>

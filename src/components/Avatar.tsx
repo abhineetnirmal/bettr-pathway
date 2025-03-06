@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 interface AvatarProps {
   src?: string;
@@ -10,11 +11,12 @@ interface AvatarProps {
 }
 
 const Avatar: React.FC<AvatarProps> = ({ 
-  src = 'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?q=80&w=1887&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 
+  src, 
   alt = 'User Avatar', 
   size = 'md',
   status
 }) => {
+  const { user } = useAuth();
   const sizeClasses = {
     xs: 'w-6 h-6',
     sm: 'w-8 h-8',
@@ -30,20 +32,35 @@ const Avatar: React.FC<AvatarProps> = ({
     busy: 'bg-red-500'
   };
 
+  // Get initials from user's full name or email
+  const getInitials = () => {
+    if (!user) return '?';
+    
+    const fullName = user.user_metadata?.full_name;
+    if (fullName) return fullName.charAt(0).toUpperCase();
+    
+    const email = user.email || '';
+    return email.charAt(0).toUpperCase();
+  };
+
   return (
     <div className="relative">
       <div 
         className={cn(
-          'rounded-full overflow-hidden border-2 border-white shadow-sm',
+          'rounded-full overflow-hidden border-2 border-white shadow-sm flex items-center justify-center bg-bettr-blue text-white',
           sizeClasses[size]
         )}
       >
-        <img 
-          src={src} 
-          alt={alt} 
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+        {src ? (
+          <img 
+            src={src} 
+            alt={alt} 
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <span className="text-lg font-semibold">{getInitials()}</span>
+        )}
       </div>
       
       {status && (

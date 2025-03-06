@@ -56,7 +56,7 @@ const HabitCard: React.FC<HabitCardProps> = ({
 
   return (
     <motion.div 
-      className="habit-card"
+      className="habit-card dark:border-gray-700 dark:bg-gray-800"
       whileHover={{ y: -4 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -70,7 +70,7 @@ const HabitCard: React.FC<HabitCardProps> = ({
           <h3 className="font-semibold text-lg">{title}</h3>
         </div>
         <motion.button 
-          className={`p-2 rounded-full ${completedToday ? 'text-bettr-green' : 'text-gray-300'} transition-colors`}
+          className={`p-2 rounded-full ${completedToday ? 'text-bettr-green' : 'text-gray-300 dark:text-gray-600'} transition-colors`}
           onClick={() => onToggle(id)}
           whileTap={{ scale: 0.9 }}
         >
@@ -81,14 +81,14 @@ const HabitCard: React.FC<HabitCardProps> = ({
       <div className="flex justify-between items-center">
         <StreakCounter streak={streak} />
         
-        <div className="flex items-center space-x-1 text-sm text-bettr-text-secondary">
+        <div className="flex items-center space-x-1 text-sm text-bettr-text-secondary dark:text-gray-400">
           <Calendar size={14} />
           <span>{completionsThisWeek}/{goalperweek} this week</span>
         </div>
       </div>
       
-      <div className="mt-3 pt-3 border-t">
-        <div className="relative h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="mt-3 pt-3 border-t dark:border-gray-700">
+        <div className="relative h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
           <motion.div 
             className="absolute top-0 left-0 h-full bg-bettr-blue rounded-full"
             initial={{ width: 0 }}

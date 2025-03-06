@@ -10,33 +10,17 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, User } from 'lucide-react';
+import Avatar from '@/components/Avatar';
 
 const NavbarUserSection = () => {
   const { user, signOut } = useAuth();
-  
-  // Get first letter of username or email for avatar fallback
-  const getInitials = () => {
-    if (!user) return '?';
-    
-    const fullName = user.user_metadata?.full_name;
-    if (fullName) return fullName.charAt(0).toUpperCase();
-    
-    const email = user.email || '';
-    return email.charAt(0).toUpperCase();
-  };
   
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
-            <AvatarImage src="" alt="User avatar" />
-            <AvatarFallback className="bg-bettr-blue text-white">
-              {getInitials()}
-            </AvatarFallback>
-          </Avatar>
+          <Avatar size="md" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>

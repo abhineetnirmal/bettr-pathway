@@ -1,4 +1,3 @@
-
 import React, { useContext, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar } from "@/components/ui/calendar";
@@ -16,7 +15,6 @@ import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 
-// Define event type
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -39,7 +37,6 @@ const CalendarPage = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   
-  // Load events from Supabase when component mounts
   useEffect(() => {
     if (!user) return;
     
@@ -53,7 +50,6 @@ const CalendarPage = () => {
           
         if (error) throw error;
         
-        // Convert to CalendarEvent objects
         const calendarEvents = data.map(event => ({
           id: event.id,
           title: event.title,
@@ -80,21 +76,17 @@ const CalendarPage = () => {
     fetchEvents();
   }, [user, toast]);
   
-  // Transform habits into calendar events based on their frequency and completion history
   const getHabitEventsForCalendar = () => {
     if (habitsLoading || !habits || habits.length === 0) return [];
     
     const habitEvents: CalendarEvent[] = [];
     
     habits.forEach(habit => {
-      // Get all completions for this habit
       const completions = habit.completionHistory || [];
       
-      // For each completion, create a calendar event
       completions.forEach(completion => {
         if (!completion.date) return;
         
-        // Create a calendar event for this completion
         const completionDate = new Date(completion.date);
         
         const habitEvent: CalendarEvent = {
@@ -110,31 +102,29 @@ const CalendarPage = () => {
         habitEvents.push(habitEvent);
       });
       
-      // Also create events for all scheduled habit days in the current week
-      // This ensures we show habits that haven't been completed yet
-      if (date) {
-        const currentDate = new Date(date);
-        const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+      if (habit.frequency && habit.frequency.length > 0) {
+        const today = new Date();
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
         
-        // Check if this habit is scheduled for this day
-        if (habit.frequency.includes(dayOfWeek)) {
-          const dateStr = format(currentDate, 'yyyy-MM-dd');
+        for (let day = new Date(startOfMonth); day <= endOfMonth; day.setDate(day.getDate() + 1)) {
+          const dayOfWeek = day.getDay();
           
-          // Check if already completed
-          const alreadyCompleted = habit.completionHistory.some(
-            h => h.date === dateStr && h.completed
-          );
-          
-          // If not already included as a completion, add it as a scheduled habit
-          if (!alreadyCompleted) {
+          if (habit.frequency.includes(dayOfWeek)) {
+            const dateStr = format(day, 'yyyy-MM-dd');
+            
+            const alreadyCompleted = habit.completionHistory.some(
+              h => h.date === dateStr && h.completed
+            );
+            
             const scheduledEvent: CalendarEvent = {
               id: `habit-${habit.id}-${dateStr}`,
               title: habit.title,
-              date: new Date(currentDate),
-              description: `Scheduled habit: ${habit.title}`,
+              date: new Date(day),
+              description: alreadyCompleted ? `Completed habit: ${habit.title}` : `Scheduled habit: ${habit.title}`,
               color: getHabitColor(habit.category),
               isHabit: true,
-              completed: false
+              completed: alreadyCompleted
             };
             
             habitEvents.push(scheduledEvent);
@@ -146,43 +136,38 @@ const CalendarPage = () => {
     return habitEvents;
   };
   
-  // Helper function to get color based on habit category
   const getHabitColor = (category: string): string => {
     switch (category) {
       case 'learning':
-        return '#3b82f6'; // blue
+        return '#3b82f6';
       case 'mindfulness':
-        return '#8b5cf6'; // purple
+        return '#8b5cf6';
       case 'fitness':
-        return '#ec4899'; // pink
+        return '#ec4899';
       case 'health':
-        return '#10b981'; // green
+        return '#10b981';
       case 'creativity':
-        return '#f97316'; // orange
+        return '#f97316';
       case 'productivity':
-        return '#6366f1'; // indigo
+        return '#6366f1';
       case 'sleep':
-        return '#3b82f6'; // blue
+        return '#3b82f6';
       case 'work':
-        return '#6b7280'; // gray
+        return '#6b7280';
       default:
-        return '#6b7280'; // gray
+        return '#6b7280';
     }
   };
   
-  // Get habitsEvents every time habits change or date changes
   const allHabitEvents = getHabitEventsForCalendar();
   
-  // Filter all events (including habits) for selected day
   const eventsForSelectedDay = [...events, ...allHabitEvents].filter(event => 
     date && event.date && 
     new Date(event.date).toDateString() === date.toDateString()
   );
   
-  // Add new event
   const handleAddEvent = async (event: CalendarEvent) => {
     try {
-      // Insert into Supabase
       const { data, error } = await supabase
         .from('calendar_events')
         .insert({
@@ -199,7 +184,6 @@ const CalendarPage = () => {
         
       if (error) throw error;
       
-      // Add to local state with the new ID
       const newEvent: CalendarEvent = {
         ...event,
         id: data.id
@@ -210,7 +194,7 @@ const CalendarPage = () => {
       
       toast({
         title: "Event Added",
-        description: `"${event.title}" has been added to your calendar.`
+        description: `"${event.title}" has been added to your calendar."
       });
     } catch (error) {
       console.error('Error adding event:', error);
@@ -222,9 +206,7 @@ const CalendarPage = () => {
     }
   };
   
-  // Delete an event
   const handleDeleteEvent = async (eventId: string) => {
-    // Only delete regular events, not habit events
     if (eventId.startsWith('habit-')) {
       toast({
         title: "Cannot Delete Habit",
@@ -234,7 +216,6 @@ const CalendarPage = () => {
     }
     
     try {
-      // Delete from Supabase
       const { error } = await supabase
         .from('calendar_events')
         .delete()
@@ -242,7 +223,6 @@ const CalendarPage = () => {
         
       if (error) throw error;
       
-      // Update local state
       const newEvents = events.filter(event => event.id !== eventId);
       setEvents(newEvents);
       
@@ -260,9 +240,7 @@ const CalendarPage = () => {
     }
   };
   
-  // Toggle habit completion
   const handleToggleHabit = (habitId: string, eventDate: Date, completed: boolean) => {
-    // Extract the actual habit ID from the combined ID (format: habit-{id}-{date})
     const parts = habitId.split('-');
     if (parts.length >= 2) {
       const actualHabitId = parts[1];
@@ -275,10 +253,8 @@ const CalendarPage = () => {
     }
   };
   
-  // Import events from URL
   const handleImportEvents = async (url: string, importedEvents: CalendarEvent[]) => {
     try {
-      // Convert imported events to database format
       const eventsToInsert = importedEvents.map(event => ({
         title: event.title,
         date: format(new Date(event.date), 'yyyy-MM-dd'),
@@ -289,7 +265,6 @@ const CalendarPage = () => {
         user_id: user!.id
       }));
       
-      // Insert into Supabase
       const { data, error } = await supabase
         .from('calendar_events')
         .insert(eventsToInsert)
@@ -297,7 +272,6 @@ const CalendarPage = () => {
         
       if (error) throw error;
       
-      // Convert back to CalendarEvent objects and add to state
       const newEvents = data.map(event => ({
         id: event.id,
         title: event.title,
@@ -390,14 +364,28 @@ const CalendarPage = () => {
                         })}
                       </p>
                       
-                      {/* Events section */}
                       <div className="space-y-3">
                         <p className="text-sm text-gray-500 font-medium">Events and Habits:</p>
-                        <CalendarEventList 
-                          events={eventsForSelectedDay} 
-                          onDelete={handleDeleteEvent}
-                          onToggleHabit={handleToggleHabit}
-                        />
+                        {eventsForSelectedDay.length > 0 ? (
+                          <CalendarEventList 
+                            events={eventsForSelectedDay} 
+                            onDelete={handleDeleteEvent}
+                            onToggleHabit={handleToggleHabit}
+                          />
+                        ) : (
+                          <div className="text-center py-6 text-sm text-muted-foreground dark:text-gray-400">
+                            <p>No events or habits scheduled for this day.</p>
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowEventForm(true)} 
+                              className="mt-2"
+                            >
+                              <CalendarPlus className="mr-2 h-3 w-3" />
+                              Add event
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (

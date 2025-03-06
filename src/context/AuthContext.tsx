@@ -37,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Setup auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (_event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -74,6 +74,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (!error && data.session) {
+      // Create or update profile
+      await supabase.from('profiles').upsert({
+        id: data.user?.id,
+        username: username,
+        avatar_url: null,
+        onboarding_completed: false
+      });
+
       navigate('/');
     }
 
