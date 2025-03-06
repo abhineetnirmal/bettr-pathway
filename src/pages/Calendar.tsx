@@ -194,7 +194,7 @@ const CalendarPage = () => {
       
       toast({
         title: "Event Added",
-        description: `"${event.title}" has been added to your calendar."
+        description: `"${event.title}" has been added to your calendar.`
       });
     } catch (error) {
       console.error('Error adding event:', error);
