@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, createContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles, Calendar as CalendarIcon, Sun, Moon, Sunset } from 'lucide-react';
 import MainLayout from '@/layouts/MainLayout';
 import HabitCard from '@/components/HabitCard';
 import ProgressChart from '@/components/ProgressChart';
@@ -13,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
-export type HabitCategory = 'learning' | 'mindfulness' | 'fitness' | 'health' | 'creativity' | 'productivity';
+export type HabitCategory = 'learning' | 'mindfulness' | 'fitness' | 'health' | 'creativity' | 'productivity' | 'sleep' | 'work';
 
 export interface Habit {
   id: string;
@@ -47,8 +48,21 @@ const Index = () => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [progressData, setProgressData] = useState<{ day: string; completed: number }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [quoteOrScience, setQuoteOrScience] = useState<'quote' | 'science'>('quote');
   const { user } = useAuth();
   const { toast } = useToast();
+  
+  // Get current time for greeting
+  const getCurrentTimeOfDay = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return { greeting: 'Good morning', icon: <Sun className="text-yellow-500" /> };
+    if (hour < 18) return { greeting: 'Good afternoon', icon: <Sun className="text-orange-500" /> };
+    return { greeting: 'Good evening', icon: <Moon className="text-indigo-400" /> };
+  };
+  
+  const { greeting, icon } = getCurrentTimeOfDay();
+  const today = new Date();
+  const formattedDate = format(today, 'EEEE, MMMM do, yyyy');
   
   // Load habits from Supabase on initial render
   useEffect(() => {
@@ -162,13 +176,13 @@ const Index = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('onboarding_completed')
           .eq('id', user.id)
           .single();
           
         if (error) throw error;
         
-        // If onboarding not completed, show onboarding
+        // If onboarding_completed is false or null, show onboarding
         setShowOnboarding(data && data.onboarding_completed === false);
       } catch (error) {
         console.error('Error checking onboarding status:', error);
@@ -207,6 +221,15 @@ const Index = () => {
     
     setProgressData(weeklyProgress);
   }, [habits]);
+  
+  // Handle toggling between motivational quote and habit science
+  useEffect(() => {
+    // Store preference in localStorage
+    const savedPreference = localStorage.getItem('bettr-motivation-preference');
+    if (savedPreference) {
+      setQuoteOrScience(savedPreference as 'quote' | 'science');
+    }
+  }, []);
   
   const completeOnboarding = async () => {
     if (!user) return;
@@ -340,6 +363,11 @@ const Index = () => {
     }
   };
   
+  const handleMotivationToggle = (value: 'quote' | 'science') => {
+    setQuoteOrScience(value);
+    localStorage.setItem('bettr-motivation-preference', value);
+  };
+  
   const saveNewHabit = async (habitData: {
     title: string;
     category: HabitCategory;
@@ -385,6 +413,14 @@ const Index = () => {
         description: `'${habitData.title}' has been added to your habits.`
       });
       
+      // Check if this is the first habit added (achievement)
+      if (habits.length === 0) {
+        toast({
+          title: "Achievement unlocked!",
+          description: "You've created your first habit. Keep going!"
+        });
+      }
+      
     } catch (error) {
       console.error('Error creating habit:', error);
       toast({
@@ -403,15 +439,22 @@ const Index = () => {
         </AnimatePresence>
         
         <div className="max-w-3xl mx-auto">
-          {/* Header section */}
+          {/* Header section with date and greeting */}
           <motion.div 
             className="mb-8"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h1 className="text-3xl font-bold mb-2">Your Habits</h1>
-            <p className="text-bettr-text-secondary">Track your progress and build consistency</p>
+            <div className="flex items-center mb-1 text-gray-500">
+              <CalendarIcon size={16} className="mr-2" />
+              <span className="text-sm">{formattedDate}</span>
+            </div>
+            <div className="flex items-center">
+              <h1 className="text-3xl font-bold">{greeting}, {user?.user_metadata?.full_name || 'there'}!</h1>
+              <span className="ml-2">{icon}</span>
+            </div>
+            <p className="text-bettr-text-secondary mt-1">Track your progress and build consistency</p>
           </motion.div>
           
           {/* Today's habits */}
@@ -475,7 +518,26 @@ const Index = () => {
           {/* Progress & Motivation Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <ProgressChart data={progressData} />
-            <MotivationalQuote />
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-lg font-medium">Motivation</h3>
+                <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 rounded-full p-1">
+                  <button 
+                    className={`px-3 py-1 text-sm rounded-full transition ${quoteOrScience === 'quote' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}
+                    onClick={() => handleMotivationToggle('quote')}
+                  >
+                    Daily
+                  </button>
+                  <button 
+                    className={`px-3 py-1 text-sm rounded-full transition ${quoteOrScience === 'science' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}
+                    onClick={() => handleMotivationToggle('science')}
+                  >
+                    Science
+                  </button>
+                </div>
+              </div>
+              <MotivationalQuote variant={quoteOrScience} />
+            </div>
           </div>
         </div>
         

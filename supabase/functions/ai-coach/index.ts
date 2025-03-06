@@ -18,8 +18,11 @@ serve(async (req) => {
   try {
     if (!openAIApiKey) {
       return new Response(
-        JSON.stringify({ error: "OpenAI API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ 
+          response: "I'm currently unable to provide coaching. Please try again later or contact support if this persists.",
+          error: "OpenAI API key not configured" 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -71,7 +74,14 @@ serve(async (req) => {
     console.log("Response from OpenAI:", JSON.stringify(data));
 
     if (data.error) {
-      throw new Error(data.error.message || "Unknown error from OpenAI");
+      console.error("OpenAI API error:", data.error);
+      return new Response(
+        JSON.stringify({ 
+          response: "I'm experiencing some technical difficulties. Please try again in a moment.",
+          error: data.error.message || "Unknown error from OpenAI" 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     const aiResponse = data.choices[0].message.content;
@@ -81,8 +91,11 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Error in AI coach function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
+    return new Response(JSON.stringify({ 
+      response: "I'm having trouble connecting right now. Please try again later.",
+      error: error.message 
+    }), {
+      status: 200, // Return 200 to prevent client-side errors
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

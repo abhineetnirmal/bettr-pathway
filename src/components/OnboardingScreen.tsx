@@ -2,6 +2,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Check } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface OnboardingScreenProps {
   onComplete: () => void;
@@ -11,6 +14,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
   
   const goals = [
     "Build healthier habits",
@@ -34,7 +39,48 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
     if (step < 2) {
       setStep(step + 1);
     } else {
+      completeOnboarding();
+    }
+  };
+
+  const completeOnboarding = async () => {
+    if (!user) return;
+    
+    try {
+      // Update profile to mark onboarding as completed and save user name
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          onboarding_completed: true, 
+          username: name 
+        })
+        .eq('id', user.id);
+        
+      if (error) throw error;
+      
+      // Save user's selected goals in user_metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { 
+          full_name: name,
+          selected_goals: selectedGoals 
+        }
+      });
+      
+      if (updateError) throw updateError;
+      
       onComplete();
+      
+      toast({
+        title: "Setup complete!",
+        description: `Welcome to Bettr, ${name}!`,
+      });
+    } catch (error) {
+      console.error('Error updating onboarding status:', error);
+      toast({
+        title: "Setup Error",
+        description: "There was a problem saving your information. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -49,7 +95,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
       transition={{ duration: 0.5 }}
     >
       <motion.div 
-        className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-bettr-blue to-bettr-purple flex items-center justify-center"
+        className="w-24 h-24 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-bettr-blue to-bettr-purple flex items-center justify-center overflow-hidden"
         initial={{ scale: 0 }}
         animate={{ scale: 1, rotate: [0, 10, 0] }}
         transition={{ 
@@ -59,7 +105,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
           delay: 0.2 
         }}
       >
-        <span className="text-white font-bold text-4xl">B</span>
+        <img src="/lovable-uploads/3c56ceb5-0b27-4455-aea0-40b4b1b31955.png" alt="Bettr Logo" className="w-full h-full object-contain" />
       </motion.div>
       
       <motion.div 
@@ -169,7 +215,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white p-6">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-gray-900 p-6">
       <div className="w-full max-w-md">
         <AnimatePresence mode="wait">
           {slides[step]}
@@ -180,10 +226,10 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
           {[0, 1, 2].map((i) => (
             <motion.div 
               key={i}
-              className={`w-2 h-2 rounded-full ${i === step ? 'bg-bettr-blue' : 'bg-gray-200'}`}
+              className={`w-2 h-2 rounded-full ${i === step ? 'bg-bettr-blue' : 'bg-gray-200 dark:bg-gray-700'}`}
               animate={{
                 scale: i === step ? [1, 1.2, 1] : 1,
-                backgroundColor: i === step ? '#0E5CFF' : (i < step ? '#0E5CFF' : '#e5e7eb')
+                backgroundColor: i === step ? '#0E5CFF' : (i < step ? '#0E5CFF' : '')
               }}
               transition={{ duration: 0.5 }}
             />

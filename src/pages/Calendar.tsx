@@ -31,7 +31,7 @@ export interface CalendarEvent {
 
 const CalendarPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const { habits, toggleHabitCompletion } = useContext(HabitsContext);
+  const { habits, toggleHabitCompletion, loading: habitsLoading } = useContext(HabitsContext);
   const [showEventForm, setShowEventForm] = useState(false);
   const [activeTab, setActiveTab] = useState('schedule');
   const { toast } = useToast();
@@ -80,50 +80,66 @@ const CalendarPage = () => {
     fetchEvents();
   }, [user, toast]);
   
-  // Transform habits into calendar events based on their frequency
+  // Transform habits into calendar events based on their frequency and completion history
   const getHabitEventsForCalendar = () => {
+    if (habitsLoading || !habits || habits.length === 0) return [];
+    
     const habitEvents: CalendarEvent[] = [];
     
     habits.forEach(habit => {
-      // Get the current date and the date 28 days from now (4 weeks)
-      const currentDate = new Date();
-      const maxDate = new Date();
-      maxDate.setDate(currentDate.getDate() + 28);
+      // Get all completions for this habit
+      const completions = habit.completionHistory || [];
       
-      // Start from yesterday to ensure we include any habits for today
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 1);
-      
-      // Create a habit event for each occurrence in the next 4 weeks
-      let loopDate = new Date(startDate);
-      
-      while (loopDate <= maxDate) {
-        const dayOfWeek = loopDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      // For each completion, create a calendar event
+      completions.forEach(completion => {
+        if (!completion.date) return;
         
-        // If this habit is scheduled for this day of the week
+        // Create a calendar event for this completion
+        const completionDate = new Date(completion.date);
+        
+        const habitEvent: CalendarEvent = {
+          id: `habit-${habit.id}-${completion.date}`,
+          title: habit.title,
+          date: completionDate,
+          description: `Completed habit: ${habit.title}`,
+          color: getHabitColor(habit.category),
+          isHabit: true,
+          completed: true
+        };
+        
+        habitEvents.push(habitEvent);
+      });
+      
+      // Also create events for all scheduled habit days in the current week
+      // This ensures we show habits that haven't been completed yet
+      if (date) {
+        const currentDate = new Date(date);
+        const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 6 = Saturday
+        
+        // Check if this habit is scheduled for this day
         if (habit.frequency.includes(dayOfWeek)) {
-          const dateStr = format(loopDate, 'yyyy-MM-dd');
+          const dateStr = format(currentDate, 'yyyy-MM-dd');
           
-          // Check if this habit is completed for this date
-          const completionEntry = habit.completionHistory.find(h => h.date === dateStr);
-          const isCompleted = completionEntry ? completionEntry.completed : false;
+          // Check if already completed
+          const alreadyCompleted = habit.completionHistory.some(
+            h => h.date === dateStr && h.completed
+          );
           
-          // Create a calendar event for this habit
-          const habitEvent: CalendarEvent = {
-            id: `habit-${habit.id}-${dateStr}`,
-            title: habit.title,
-            date: new Date(loopDate),
-            description: `Regular habit: ${habit.title}`,
-            color: getHabitColor(habit.category),
-            isHabit: true,
-            completed: isCompleted
-          };
-          
-          habitEvents.push(habitEvent);
+          // If not already included as a completion, add it as a scheduled habit
+          if (!alreadyCompleted) {
+            const scheduledEvent: CalendarEvent = {
+              id: `habit-${habit.id}-${dateStr}`,
+              title: habit.title,
+              date: new Date(currentDate),
+              description: `Scheduled habit: ${habit.title}`,
+              color: getHabitColor(habit.category),
+              isHabit: true,
+              completed: false
+            };
+            
+            habitEvents.push(scheduledEvent);
+          }
         }
-        
-        // Move to the next day
-        loopDate.setDate(loopDate.getDate() + 1);
       }
     });
     
@@ -145,20 +161,16 @@ const CalendarPage = () => {
         return '#f97316'; // orange
       case 'productivity':
         return '#6366f1'; // indigo
+      case 'sleep':
+        return '#3b82f6'; // blue
+      case 'work':
+        return '#6b7280'; // gray
       default:
         return '#6b7280'; // gray
     }
   };
   
-  // Get day of week for the selected date (0 = Sunday, 6 = Saturday)
-  const selectedDayOfWeek = date ? date.getDay() : new Date().getDay();
-  
-  // Filter habits scheduled for the selected day
-  const habitsForSelectedDay = habits.filter(habit => 
-    habit.frequency.includes(selectedDayOfWeek)
-  );
-  
-  // Combine regular events with habit events for the selected day
+  // Get habitsEvents every time habits change or date changes
   const allHabitEvents = getHabitEventsForCalendar();
   
   // Filter all events (including habits) for selected day
@@ -250,13 +262,17 @@ const CalendarPage = () => {
   
   // Toggle habit completion
   const handleToggleHabit = (habitId: string, eventDate: Date, completed: boolean) => {
-    // Call the context function to update the habit
-    toggleHabitCompletion(habitId, eventDate);
-    
-    toast({
-      title: completed ? "Habit Completed" : "Habit Marked Incomplete",
-      description: `Your habit has been marked as ${completed ? 'completed' : 'incomplete'} for this day.`
-    });
+    // Extract the actual habit ID from the combined ID (format: habit-{id}-{date})
+    const parts = habitId.split('-');
+    if (parts.length >= 2) {
+      const actualHabitId = parts[1];
+      toggleHabitCompletion(actualHabitId, eventDate);
+      
+      toast({
+        title: completed ? "Habit Completed" : "Habit Marked Incomplete",
+        description: `Your habit has been marked as ${completed ? 'completed' : 'incomplete'} for this day.`
+      });
+    }
   };
   
   // Import events from URL
@@ -359,7 +375,7 @@ const CalendarPage = () => {
                   <CardTitle>Daily Overview</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {loading ? (
+                  {loading || habitsLoading ? (
                     <div className="flex justify-center py-12">
                       <Loader2 className="animate-spin h-8 w-8 text-bettr-blue" />
                     </div>

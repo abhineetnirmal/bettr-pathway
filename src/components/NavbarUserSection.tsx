@@ -20,6 +20,9 @@ const NavbarUserSection = () => {
   const getInitials = () => {
     if (!user) return '?';
     
+    const fullName = user.user_metadata?.full_name;
+    if (fullName) return fullName.charAt(0).toUpperCase();
+    
     const email = user.email || '';
     return email.charAt(0).toUpperCase();
   };
@@ -29,7 +32,7 @@ const NavbarUserSection = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.user_metadata?.avatar_url || ''} alt="User avatar" />
+            <AvatarImage src="" alt="User avatar" />
             <AvatarFallback className="bg-bettr-blue text-white">
               {getInitials()}
             </AvatarFallback>
@@ -52,7 +55,7 @@ const NavbarUserSection = () => {
             Profile
           </a>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={signOut} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-100/50">
+        <DropdownMenuItem onClick={signOut} className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-100/50 dark:focus:bg-red-900/20">
           <LogOut className="mr-2 h-4 w-4" />
           Sign out
         </DropdownMenuItem>

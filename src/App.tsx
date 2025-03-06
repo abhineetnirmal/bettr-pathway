@@ -14,6 +14,7 @@ import ProfilePage from "./pages/Profile";
 import Auth from "./pages/Auth";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const queryClient = new QueryClient();
 
@@ -86,11 +87,13 @@ const AppRoutes = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AppWrapper />
-    </TooltipProvider>
+    <ThemeProvider defaultTheme="light" storageKey="bettr-theme">
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AppWrapper />
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
