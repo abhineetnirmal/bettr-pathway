@@ -8,7 +8,6 @@ import { AuthProvider } from "@/context/AuthContext";
 import { useAuth } from "@/context/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import CalendarPage from "./pages/Calendar";
 import ProgressPage from "./pages/Progress";
 import ProfilePage from "./pages/Profile";
 import Auth from "./pages/Auth";
@@ -75,7 +74,6 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <Auth />} />
         <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-        <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
         <Route path="/progress" element={<ProtectedRoute><ProgressPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

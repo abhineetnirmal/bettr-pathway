@@ -36,9 +36,6 @@ const Navbar = () => {
           <Link to="/" className={cn("text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors", location.pathname === '/' && "text-gray-900 dark:text-white font-semibold")}>
             Habits
           </Link>
-          <Link to="/calendar" className={cn("text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors", location.pathname === '/calendar' && "text-gray-900 dark:text-white font-semibold")}>
-            Calendar
-          </Link>
           {user?.id && (
             <Link to="/profile" className={cn("text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors", location.pathname === '/profile' && "text-gray-900 dark:text-white font-semibold")}>
               Profile
@@ -59,9 +56,6 @@ const Navbar = () => {
                 <nav className="flex flex-col space-y-4">
                   <Link to="/" className={cn("block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors", location.pathname === '/' && "text-gray-900 dark:text-white font-semibold")}>
                     Habits
-                  </Link>
-                  <Link to="/calendar" className={cn("block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors", location.pathname === '/calendar' && "text-gray-900 dark:text-white font-semibold")}>
-                    Calendar
                   </Link>
                   {user?.id && (
                     <Link to="/profile" className={cn("block px-4 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors", location.pathname === '/profile' && "text-gray-900 dark:text-white font-semibold")}>

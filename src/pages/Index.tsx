@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, createContext } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Sparkles, Calendar as CalendarIcon, Sun, Moon, Sunset } from 'lucide-react';
@@ -9,6 +8,7 @@ import AICoach from '@/components/AICoach';
 import MotivationalQuote from '@/components/MotivationalQuote';
 import HabitForm from '@/components/HabitForm';
 import OnboardingScreen from '@/components/OnboardingScreen';
+import CalendarSection from '@/components/CalendarSection';
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -410,7 +410,7 @@ const Index = () => {
       
       toast({
         title: "Habit created!",
-        description: `'${habitData.title}' has been added to your habits.`
+        description: `'${habitData.title}' has been added to your habits."
       });
       
       // Check if this is the first habit added (achievement)
@@ -451,10 +451,10 @@ const Index = () => {
               <span className="text-sm">{formattedDate}</span>
             </div>
             <div className="flex items-center">
-              <h1 className="text-3xl font-bold">{greeting}, {user?.user_metadata?.full_name || 'there'}!</h1>
+              <h1 className="text-3xl font-bold dark:text-white">{greeting}, {user?.user_metadata?.full_name || 'there'}!</h1>
               <span className="ml-2">{icon}</span>
             </div>
-            <p className="text-bettr-text-secondary mt-1">Track your progress and build consistency</p>
+            <p className="text-bettr-text-secondary dark:text-gray-300 mt-1">Track your progress and build consistency</p>
           </motion.div>
           
           {/* Today's habits */}
@@ -465,7 +465,7 @@ const Index = () => {
             transition={{ duration: 0.5, delay: 0.1 }}
           >
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Today</h2>
+              <h2 className="text-xl font-semibold dark:text-white">Today</h2>
               <motion.button
                 className="btn-primary flex items-center space-x-1"
                 onClick={() => setShowHabitForm(true)}
@@ -501,8 +501,8 @@ const Index = () => {
                 {habits.length === 0 && (
                   <div className="col-span-full glass-card p-6 text-center">
                     <Sparkles className="mx-auto mb-3 text-bettr-orange" size={24} />
-                    <h3 className="text-lg font-medium mb-2">No habits yet</h3>
-                    <p className="text-bettr-text-secondary mb-4">Start building your routine by adding your first habit</p>
+                    <h3 className="text-lg font-medium mb-2 dark:text-white">No habits yet</h3>
+                    <p className="text-bettr-text-secondary dark:text-gray-300 mb-4">Start building your routine by adding your first habit</p>
                     <button 
                       className="btn-primary mx-auto"
                       onClick={() => setShowHabitForm(true)}
@@ -520,7 +520,7 @@ const Index = () => {
             <ProgressChart data={progressData} />
             <div>
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-lg font-medium">Motivation</h3>
+                <h3 className="text-lg font-medium dark:text-white">Motivation</h3>
                 <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 rounded-full p-1">
                   <button 
                     className={`px-3 py-1 text-sm rounded-full transition ${quoteOrScience === 'quote' ? 'bg-white dark:bg-gray-700 shadow-sm' : ''}`}
@@ -539,6 +539,9 @@ const Index = () => {
               <MotivationalQuote variant={quoteOrScience} />
             </div>
           </div>
+          
+          {/* Calendar Section (integrated from previous Calendar page) */}
+          <CalendarSection />
         </div>
         
         {/* AI Coach */}

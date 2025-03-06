@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, ChevronUp, Send, Loader2, Sparkles } from 'lucide-react';
@@ -34,7 +33,6 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
     setIsOpen(!isOpen);
   };
 
-  // Fetch user profile when component mounts
   useEffect(() => {
     if (user) {
       fetchUserProfile();
@@ -56,7 +54,6 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
     }
   };
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -65,14 +62,12 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
 
   const handleSend = async () => {
     if (input.trim() && !isLoading) {
-      // Add user message
       const userMessage = { text: input.trim(), sender: 'user' as const };
       setMessages(prev => [...prev, userMessage]);
       setInput("");
       setIsLoading(true);
 
       try {
-        // Generate context about the user's habits
         const habitsContext = habits.length > 0 
           ? `User has ${habits.length} habits: ${habits.map(h => h.title).join(', ')}.
              Top performing habit: ${habits.sort((a, b) => b.streak - a.streak)[0]?.title || 'None'} 
@@ -84,13 +79,11 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
              Math.max(1, habits.reduce((sum, h) => sum + h.goalperweek, 0)) * 100}%.`
           : "User hasn't created any habits yet.";
 
-        // Format messages for the API (excluding the initial greeting)
         const apiMessages = messages.slice(1).concat(userMessage).map(msg => ({
           role: msg.sender === 'user' ? 'user' : 'assistant',
           content: msg.text
         }));
 
-        // Call our Supabase Edge Function
         const { data, error } = await supabase.functions.invoke('ai-coach', {
           body: {
             messages: apiMessages,
@@ -103,7 +96,6 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
           throw new Error(error.message || "Failed to get response from AI coach");
         }
 
-        // Add AI response to messages
         setMessages(prev => [...prev, { text: data.response, sender: 'ai' }]);
       } catch (error) {
         console.error('Error getting AI response:', error);
@@ -113,7 +105,6 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
           variant: "destructive"
         });
         
-        // Add error message
         setMessages(prev => [...prev, { 
           text: "Sorry, I'm having trouble connecting right now. Please try again later.", 
           sender: 'ai' 
@@ -131,7 +122,6 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
     }
   };
 
-  // Suggestions for users who might not know what to ask
   const suggestions = [
     "How can I stay consistent with my habits?",
     "What habits would improve my productivity?",
@@ -148,27 +138,25 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
       <AnimatePresence>
         {isOpen && (
           <motion.div 
-            className="glass-panel mb-4 rounded-2xl w-[320px] sm:w-[350px] max-h-[500px] flex flex-col shadow-lg border border-white/30"
+            className="glass-panel mb-4 rounded-2xl w-[320px] sm:w-[350px] max-h-[500px] flex flex-col shadow-lg border border-white/30 bg-white dark:bg-gray-800"
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
             transition={{ duration: 0.3 }}
           >
-            {/* Chat header */}
-            <div className="px-4 py-3 border-b border-gray-100 flex justify-between items-center">
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-bettr-blue to-bettr-purple flex items-center justify-center text-white font-bold">
                   <Sparkles size={16} />
                 </div>
-                <span className="font-medium">{name}</span>
+                <span className="font-medium dark:text-white">{name}</span>
               </div>
-              <button onClick={toggleChat} className="text-gray-400 hover:text-gray-600 transition-colors">
+              <button onClick={toggleChat} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
                 <X size={18} />
               </button>
             </div>
             
-            {/* Chat messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[350px]">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-[350px] bg-white dark:bg-gray-800">
               {messages.map((message, index) => (
                 <motion.div 
                   key={index}
@@ -201,16 +189,15 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
                 </motion.div>
               )}
               
-              {/* Suggestions (only show if no messages except the initial greeting) */}
               {messages.length === 1 && (
                 <div className="mt-4">
-                  <p className="text-sm text-bettr-text-secondary mb-2">Try asking about:</p>
+                  <p className="text-sm text-bettr-text-secondary dark:text-gray-300 mb-2">Try asking about:</p>
                   <div className="flex flex-wrap gap-2">
                     {suggestions.map((suggestion, index) => (
                       <button
                         key={index}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-full text-bettr-text-secondary transition-colors"
+                        className="text-xs px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-full text-bettr-text-secondary dark:text-gray-300 transition-colors"
                       >
                         {suggestion}
                       </button>
@@ -222,8 +209,7 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
               <div ref={messagesEndRef} />
             </div>
             
-            {/* Chat input */}
-            <div className="p-3 border-t border-gray-100">
+            <div className="p-3 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
@@ -231,7 +217,7 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask me anything..."
-                  className="flex-1 px-3 py-2 rounded-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-bettr-blue/30 transition-all"
+                  className="flex-1 px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-bettr-blue/30 transition-all dark:text-white"
                   disabled={isLoading}
                 />
                 <motion.button 
@@ -248,7 +234,6 @@ const AICoach: React.FC<AICoachProps> = ({ name = "Bettr Coach" }) => {
         )}
       </AnimatePresence>
       
-      {/* Chat toggle button */}
       <motion.button
         className="w-14 h-14 rounded-full bg-gradient-to-r from-bettr-blue to-bettr-purple text-white flex items-center justify-center shadow-lg"
         whileHover={{ scale: 1.05 }}
